@@ -63,6 +63,7 @@ def wireless_state():
             "stations_reason": stations.get("reason"),
             "config": {
                 "ssid": cfg.wifi.ssid,
+                "ssid_quoted": cfg.wifi.ssid != util.strip_ssid_quotes(cfg.wifi.ssid),
                 "channel": cfg.wifi.channel,
                 "country": cfg.wifi.country,
                 "hidden": cfg.wifi.hidden,

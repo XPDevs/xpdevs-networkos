@@ -140,6 +140,11 @@ def run(
             shell=False,
             close_fds=True,
         )
+    except FileNotFoundError as exc:
+        # The allowlist resolved a path that no longer exists (uninstalled
+        # package, or a PATH that differs from the caller's). Report it as a
+        # missing program instead of leaking "No such file or directory".
+        raise CommandError(f"Required program '{program}' could not be found.", command=program) from exc
     except subprocess.TimeoutExpired:
         raise CommandError("The operation timed out.", command=os.path.basename(program))
     except (OSError, ValueError) as exc:

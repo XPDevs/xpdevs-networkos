@@ -252,7 +252,11 @@ def cmd_pihole_configure(args) -> dict[str, Any]:
             raise NetworkOSError(f"Could not set {key}: {(result.stderr or result.stdout).strip()[:200]}")
 
     for key, value in (
-        ("webserver.port", f"127.0.0.1:{cfg.pihole.api_base.rsplit(':', 1)[-1] or '8081'}"),
+        # Pi-hole FTL v6 parses this as a port specification ("8081o" = port
+        # 8081, optional), not "address:port". The old value was rejected, FTL
+        # fell back to port 80, NetworkOS already owns 80, and every dashboard
+        # call to Pi-hole then timed out.
+        ("webserver.port", f"{cfg.pihole.api_base.rsplit(':', 1)[-1] or '8081'}o"),
         ("webserver.acl", "127.0.0.1/32"),
         ("dns.listeningMode", "ALL"),
         ("dhcp.active", "false"),

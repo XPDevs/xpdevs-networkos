@@ -102,7 +102,11 @@ class PiholeClient:
             raw = exc.read() or b""
             status = exc.code
         except (urllib.error.URLError, socket.timeout, OSError) as exc:
-            raise PiholeError(f"Could not reach Pi-hole at {self.base}: {exc}")
+            reason = getattr(exc, "reason", exc)
+            raise PiholeError(
+                f"Could not reach Pi-hole at {self.base} ({reason}). "
+                "Check that pihole-FTL is running and that its webserver.port matches this address."
+            ) from exc
         if not raw:
             return status, None
         try:

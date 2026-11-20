@@ -55,6 +55,13 @@ def render_hostapd(cfg, version: str) -> str:
         "wpa=2",
         "wpa_key_mgmt=WPA-PSK",
         "rsn_pairwise=CCMP",
+        "wpa_pairwise=CCMP",
+        # PMF is optional in WPA2 and several Android builds and the Pi 3
+        # brcmfmac driver negotiate it badly, which shows up as a 4-way
+        # handshake failure that looks like a wrong password. Off is correct
+        # for a WPA2-Personal network.
+        "ieee80211w=0",
+        "wpa_group_rekey=600",
         f"wpa_psk={wifi.psk}",
         "ap_isolate=1" if wifi.isolate_clients else "ap_isolate=0",
         f"max_num_sta={max(1, min(int(wifi.max_clients), 200))}",

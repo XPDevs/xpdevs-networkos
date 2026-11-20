@@ -109,6 +109,10 @@ def connect() -> sqlite3.Connection:
     if conn is not None:
         return conn
     paths.STATE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        paths.DB_FILE.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise sqlite3.OperationalError(f"cannot create the state directory {paths.STATE_DIR}: {exc}") from exc
     conn = sqlite3.connect(str(paths.DB_FILE), timeout=10.0, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -120,6 +124,29 @@ def connect() -> sqlite3.Connection:
         os.chmod(paths.DB_FILE, 0o600)  # hashes and sessions: owner only
     except OSError:
         pass
+    # The privileged helper runs as root while the dashboard runs unprivileged.
+    # A root-created 0600 database made every device and event query fail for the
+    # web service ("unable to open database file"), so hand the file to the
+    # service account when we are root and that account exists.
+    if os.geteuid() == 0:
+        try:
+            import pwd
+
+            uid = pwd.getpwnam(paths.APP_SLUG).pw_uid
+            os.chown(paths.DB_FILE, uid, -1)
+            os.chmod(paths.DB_FILE, 0o660)
+        except (KeyError, OSError):
+            pass
+    # Any caller may be the first to touch the database (boot unit, timer, web
+    # app), so make sure the schema exists before it is queried.
+    try:
+        ready = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='users'"
+        ).fetchone()
+        if ready is None:
+            conn.executescript(SCHEMA)
+    except sqlite3.Error as exc:
+        log.warning("could not initialise the database schema: %s", exc)
     _LOCAL.conn = conn
     return conn
 

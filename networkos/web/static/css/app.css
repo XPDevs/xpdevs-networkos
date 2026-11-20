@@ -1497,3 +1497,185 @@ textarea.input {
 .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .inline-form { display: flex; gap: 8px; flex-wrap: wrap; }
 .inline-form .input { flex: 1 1 220px; width: auto; }
+
+/* ==========================================================================
+   XPDevs brand layer (1.1.1)
+   Corporate identity: near-black ink, one signal red, hairline rules and
+   squared geometry. Type is tight and confident, labels are uppercase, and
+   numbers are tabular so dashboards read like instrumentation rather than a
+   consumer app.
+   ========================================================================== */
+
+:root {
+  --bg: #f4f5f7;
+  --bg-alt: #eceef1;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --surface-3: #f0f1f4;
+  --border: #e2e4e9;
+  --border-strong: #cbd0d8;
+  --divider: #edeef1;
+
+  --text: #0b0d10;
+  --text-2: #454b54;
+  --text-3: #6b7280;
+
+  --primary: #e60000;
+  --primary-600: #c40000;
+  --primary-700: #a30000;
+  --primary-soft: #fdecec;
+  --primary-border: #f3c3c3;
+
+  --success: #0b7a4b;
+  --success-soft: #e9f6f0;
+  --success-border: #bfe0d0;
+
+  --warn: #a85b00;
+  --warn-soft: #fdf3e6;
+  --warn-border: #eed7b6;
+
+  --danger: #c40000;
+  --danger-soft: #fdecec;
+  --danger-border: #f3c3c3;
+
+  --violet: #3d3d46;
+  --violet-soft: #f0f0f3;
+
+  --shadow-xs: 0 1px 1px rgba(11, 13, 16, 0.04);
+  --shadow-sm: 0 1px 2px rgba(11, 13, 16, 0.06);
+  --shadow-md: 0 10px 24px -14px rgba(11, 13, 16, 0.22);
+  --shadow-lg: 0 28px 56px -28px rgba(11, 13, 16, 0.32);
+
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-lg: 6px;
+  --radius-pill: 3px;
+
+  --ring: 0 0 0 2px rgba(230, 0, 0, 0.22);
+  --sidebar-w: 264px;
+  --header-h: 64px;
+}
+
+[data-theme="dark"] {
+  --bg: #0a0b0d;
+  --bg-alt: #101216;
+  --surface: #14161a;
+  --surface-2: #191c21;
+  --surface-3: #1e2228;
+  --border: #262a30;
+  --border-strong: #363c45;
+  --divider: #21252b;
+
+  --text: #f3f4f6;
+  --text-2: #a8afb9;
+  --text-3: #7d858f;
+
+  --primary: #ff3b30;
+  --primary-600: #e02d23;
+  --primary-700: #bd251c;
+  --primary-soft: #2a1414;
+  --primary-border: #4a2020;
+
+  --success: #2fbe86;
+  --success-soft: #10231b;
+  --success-border: #1d3d2f;
+
+  --warn: #e7a33e;
+  --warn-soft: #241c10;
+  --warn-border: #3f3218;
+
+  --danger: #ff5147;
+  --danger-soft: #2a1414;
+  --danger-border: #4a2020;
+
+  --ring: 0 0 0 2px rgba(255, 59, 48, 0.28);
+}
+
+body { letter-spacing: -0.005em; }
+
+h1, h2, h3, .hero__title, .section-heading {
+  letter-spacing: -0.022em;
+  font-weight: 660;
+}
+
+/* Sidebar reads as a graphite control panel, not a light menu. */
+.sidebar {
+  background: #14161a;
+  border-right: 1px solid #22262c;
+  color: #e9ebef;
+}
+.sidebar__brand { border-bottom: 2px solid var(--primary); }
+.brand-text strong { color: #ffffff; letter-spacing: -0.02em; }
+.brand-text span { color: #8d949e; text-transform: uppercase; letter-spacing: 0.14em; font-size: 10px; }
+.brand-mark { color: var(--primary); }
+
+.nav__label {
+  color: #767d87;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: 600;
+}
+.nav__link { color: #c3c8d0; border-radius: 3px; }
+.nav__link:hover { background: #1c2026; color: #ffffff; }
+.nav__link.is-active {
+  background: #1c2026;
+  color: #ffffff;
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+
+/* Cards and panels: hairline rules, squared corners, no bounce. */
+.card, .panel, .hero, .error-card, .auth__form {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.card { background: var(--surface); }
+
+/* Instrumentation numerals. */
+.stat__value, .stat__number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  font-weight: 680;
+}
+
+/* Buttons: uppercase, tight, one signal colour. */
+.btn {
+  border-radius: 3px;
+  font-weight: 620;
+  letter-spacing: 0.02em;
+}
+.btn--primary {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+.btn--primary:hover { background: var(--primary-600); border-color: var(--primary-600); }
+
+/* Tables as data grids. */
+.table th {
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  border-bottom: 2px solid var(--border-strong);
+  font-weight: 640;
+}
+.table td { border-bottom: 1px solid var(--divider); }
+.table tbody tr:hover { background: var(--surface-3); }
+
+.pill, .badge { border-radius: 2px; text-transform: uppercase; letter-spacing: 0.08em; font-size: 10.5px; font-weight: 640; }
+
+.input, .select, .textarea { border-radius: 3px; }
+.input:focus, .select:focus { box-shadow: var(--ring); border-color: var(--primary); }
+
+.hero__eyebrow, .eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  font-weight: 640;
+  color: var(--text-3);
+}

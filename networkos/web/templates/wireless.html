@@ -7,7 +7,7 @@
 <section class="hero">
   <span class="hero__icon" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-wifi"/></svg></span>
   <div class="hero__text">
-    <h1 id="ap-headline">{{ ssid }}</h1>
+    <h1 id="ap-headline">\u201c{{ ssid }}\u201d</h1>
     <p id="ap-subline">Wireless access point on {{ lan_interface }} · {{ lan_address }}</p>
   </div>
   <div class="hero__actions">
@@ -28,7 +28,7 @@
       <span class="stat__label">Network name</span>
       <span class="stat__icon stat__icon--blue" aria-hidden="true"><svg class="icon"><use href="#i-wifi"/></svg></span>
     </div>
-    <div class="stat__value" id="stat-ssid">{{ ssid }}</div>
+    <div class="stat__value" id="stat-ssid">\u201c{{ ssid }}\u201d</div>
     <div class="stat__meta" id="stat-ssid-meta">{{ 'Hidden network' if hidden else 'Visible to nearby devices' }}</div>
     <span class="pill" id="ap-state-pill"><span class="dot"></span><span>Checking…</span></span>
   </article>

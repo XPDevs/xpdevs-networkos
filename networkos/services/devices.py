@@ -58,7 +58,13 @@ def parse_leases(path=None) -> list[dict[str, Any]]:
 def _sync_database(seen: dict[str, dict[str, Any]]) -> dict[str, sqlite3.Row]:
     """Persist first/last seen values with minimal write amplification."""
     now = util.epoch_now()
-    existing = {row["mac"]: row for row in db.query("SELECT * FROM devices")}
+    try:
+        existing = {row["mac"]: row for row in db.query("SELECT * FROM devices")}
+    except sqlite3.Error as exc:
+        # A missing or unreadable database must not take the device list down:
+        # the live lease/station data is still worth showing.
+        log.warning("device history unavailable: %s", exc)
+        return {}
     for mac, device in seen.items():
         row = existing.get(mac)
         ip = device.get("ip") or ""

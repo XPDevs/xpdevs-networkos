@@ -166,12 +166,35 @@ def valid_mac(value: object) -> bool:
     return normalize_mac(value) is not None
 
 
+_QUOTE_CHARS = "\"'\u201c\u201d\u2018\u2019"
+
+
+def strip_ssid_quotes(value: str) -> str:
+    """Remove decorative quotes from an SSID.
+
+    Users copy the quoted name the dashboard shows, so names arrive wrapped in
+    straight or typographic quotes. Those characters become part of the beacon
+    and of the PSK salt, which is why a client then reports a wrong password:
+    it derives the key from the name without the quotes.
+    """
+    text = value.strip()
+    changed = True
+    while changed and len(text) >= 2:
+        changed = False
+        if text[0] in _QUOTE_CHARS and text[-1] in _QUOTE_CHARS:
+            text = text[1:-1].strip()
+            changed = True
+    return text
+
+
 def valid_ssid(value: object) -> str:
-    text = str(value or "").strip()
+    text = strip_ssid_quotes(str(value or ""))
     if not text:
         raise ValidationError("ssid", "The Wi-Fi network name cannot be empty.")
     if SSID_FORBIDDEN.search(text):
         raise ValidationError("ssid", "The Wi-Fi network name contains control characters.")
+    if '"' in text or "\\" in text:
+        raise ValidationError("ssid", "The Wi-Fi network name cannot contain quotes or backslashes.")
     if len(text.encode("utf-8")) > 32:
         raise ValidationError("ssid", "The Wi-Fi network name must be 32 bytes or fewer.")
     return text
