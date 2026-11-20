@@ -249,7 +249,7 @@ def verify_ap(cfg, *, timeout: float = 15.0) -> dict[str, Any]:
                 if stripped.startswith("channel") and channel is None:
                     channel = stripped
                 elif stripped.startswith("ssid ") and running_ssid is None:
-                    running_ssid = stripped[5:].strip()
+                    running_ssid = util.strip_ssid_quotes(stripped[5:].strip())
             # A restart that leaves the previous hostapd alive keeps the old
             # SSID/PSK on air while the new file sits on disk. Clients then fail
             # the 4-way handshake with "invalid MIC in msg 2/4". Comparing the
