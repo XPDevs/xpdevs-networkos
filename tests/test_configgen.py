@@ -106,3 +106,11 @@ def test_render_all_covers_every_daemon():
     assert set(generated) >= {"hostapd", "dnsmasq", "nft", "sysctl"}
     for body in generated.values():
         assert "XPDevs NetworkOS 1.0.0" in body
+
+
+def test_hostapd_disables_pmf_and_pins_ccmp():
+    text = configgen.render_hostapd(_config(), "1.0.0")
+    assert "ieee80211w=0" in text
+    assert "rsn_pairwise=CCMP" in text
+    assert "wpa_pairwise=CCMP" in text
+    assert "TKIP" not in text

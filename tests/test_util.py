@@ -109,3 +109,12 @@ def test_wpa_psk_is_derived_from_both_ssid_and_passphrase():
     assert base != util.wpa_psk("XPDevs-NetworkOS-Test ", "correct-horse-battery")
     assert base != util.wpa_psk("XPDevs-NetworkOS-Test", "correct-horse-battery!")
     assert len(base) == 64 and int(base, 16) >= 0
+
+
+def test_ssid_quotes_are_stripped():
+    """A name pasted with the quotes the dashboard shows must not keep them."""
+    from networkos import util
+
+    assert util.valid_ssid('"XPDevs-NetworkOS-Test"') == "XPDevs-NetworkOS-Test"
+    assert util.valid_ssid("\u201cXPDevs-NetworkOS-Test\u201d") == "XPDevs-NetworkOS-Test"
+    assert util.strip_ssid_quotes("plain-name") == "plain-name"

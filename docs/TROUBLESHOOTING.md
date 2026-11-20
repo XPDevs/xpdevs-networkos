@@ -181,6 +181,32 @@ The ruleset is regenerated at every boot by `xpdevs-networkos-net.service`, whic
 after `nftables.service`. A hand-added rule (`nft add rule ...`) is not persisted; put the
 change in the configuration instead.
 
+## The device list is empty or reports a database error
+
+```bash
+sudo ls -l /var/lib/xpdevs-networkos/
+sudo -u xpdevs-networkos sqlite3 /var/lib/xpdevs-networkos/networkos.db '.tables'
+```
+
+* `unable to open database file` — the directory or file is missing, or owned by root with
+  mode 0600. `sudo install -d -o xpdevs-networkos -g xpdevs-networkos /var/lib/xpdevs-networkos`
+  and `sudo chown xpdevs-networkos: /var/lib/xpdevs-networkos/networkos.db*`. Version 1.1.1
+  creates the schema on first use and fixes ownership itself, so an upgrade repairs this.
+* `no such table: devices` — the schema was never created. Restart the dashboard, which now
+  initialises it: `sudo systemctl restart xpdevs-networkos-web`.
+
+## The dashboard says Pi-hole timed out
+
+```bash
+sudo pihole-FTL --config webserver.port     # must be 8081o
+sudo ss -lntp | grep 8081                   # must be listening on 127.0.0.1
+sudo systemctl restart pihole-FTL
+```
+
+* Empty or `80o` — FTL is on port 80, which NetworkOS owns. Re-run
+  `sudo networkosctl pihole-configure --password-stdin < /etc/xpdevs-networkos/secrets/pihole-api.key`.
+* Listening on a different port — set `pihole.api_base` in the configuration to match.
+
 ## Clients connect but get no address
 
 ```bash

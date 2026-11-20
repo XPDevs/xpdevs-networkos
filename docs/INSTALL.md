@@ -232,11 +232,20 @@ other processes through `/proc`.
 ## Uninstalling
 
 ```bash
-sudo bash uninstall.sh                 # stops and removes the product
-sudo bash uninstall.sh --purge         # also deletes configuration, database, logs
+sudo bash uninstall.sh --dry-run    # show what would happen
+sudo bash uninstall.sh              # remove the product, keep configuration and Pi-hole
+sudo bash uninstall.sh --purge      # also delete configuration, database and logs
 sudo bash uninstall.sh --purge --purge-pihole
-sudo bash uninstall.sh --restore-distro-services   # unmask hostapd/dnsmasq again
 ```
 
-After removal the distribution's `dhcpcd` (or NetworkManager) takes `wlan0` back, so
-the Pi behaves like a stock Raspberry Pi OS machine again. `eth0` is untouched.
+The uninstaller reverses everything the installer changed on the host: it stops and
+removes the units, deletes the firewall table, flushes the AP interface, unmasks
+`hostapd`, `dnsmasq` and `wpa_supplicant@wlan0`, deletes the NetworkManager override that
+kept `wlan0` unmanaged, removes the helper, sudo policy, logrotate and Avahi definitions,
+clears the runtime sockets, and restarts the host's networking.
+
+`eth0` is never touched, so the management connection survives. `--restore-distro-services`
+additionally re-enables the distribution `hostapd` and `dnsmasq` units. Configuration and
+the database are kept unless `--purge` is given, and the pre-install snapshots in
+`/var/backups/xpdevs-networkos` are always kept. The service account is left in place; the
+script prints the `userdel` command to remove it.

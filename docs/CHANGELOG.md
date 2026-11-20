@@ -2,6 +2,57 @@
 
 All notable changes to XPDevs NetworkOS. This project follows semantic versioning.
 
+## 1.1.2 — uninstaller
+
+### Fixed
+
+* The uninstaller left the wireless radio unusable: it removed the product but never
+  unmasked `wpa_supplicant@wlan0`, which the installer masks, so nothing could bring
+  `wlan0` back up afterwards. Unmasking hostapd, dnsmasq and the supplicant now happens
+  unconditionally; `--restore-distro-services` additionally re-enables them.
+* `/etc/NetworkManager/conf.d/xpdevs-networkos.conf` was left behind, so NetworkManager
+  kept treating the AP interface as unmanaged after the product was gone. It is now
+  removed and NetworkManager restarted.
+* Runtime state was never cleaned: the hostapd control socket and both PID files stayed
+  in `/run`. They are now removed.
+* `systemctl reset-failed` was missing, so a previously failed unit stayed in the failed
+  list after its file was deleted.
+* `rm -rf` ran on fixed paths with no validation. Removal now goes through an allowlist of
+  paths the product actually owns, which also makes the script testable.
+
+### Added
+
+* `--dry-run` prints every action without performing it.
+* The script reports a verification summary: any product file that survived is listed,
+  and the exit path states whether the host is clean.
+* `--help` documents every option.
+
+## 1.1.1 — dashboard and Wi-Fi reliability
+
+### Fixed
+
+* Device list failed with a database error ("no such file or directory" /
+  "no such table: devices"). The schema is now created by whichever process touches the
+  database first, the state directory is created on demand, and a root-created database is
+  handed to the service account so the dashboard can read it. A database problem now
+  degrades the device list instead of blanking the page.
+* Pi-hole calls from the dashboard timed out. FTL v6 expects a port specification
+  (`8081o`), not `address:port`; the old value was rejected, FTL fell back to port 80,
+  which NetworkOS owns. Errors now name the address and what to check.
+* The Wi-Fi name was stored and displayed with quote characters, which made the SSID and
+  the PSK salt disagree. Quotes are stripped on save, the dashboard shows typographic
+  quotes around the name, and names containing quotes or backslashes are rejected.
+* Wi-Fi clients reported a wrong password. hostapd now pins WPA2/CCMP, disables PMF
+  (`ieee80211w=0`, which several Android builds and brcmfmac negotiate badly) and sets a
+  group rekey interval.
+* A missing program no longer surfaces as a bare "No such file or directory"; the command
+  layer reports which program is missing.
+
+### Changed
+
+* Dashboard identity: graphite sidebar with a signal-red rule, near-black ink, hairline
+  borders, squared geometry, uppercase micro-labels and tabular numerals.
+
 ## 1.1.0 — repair release
 
 Fixes for faults reproduced on a Raspberry Pi 3 Model B running Debian 13 (trixie).
