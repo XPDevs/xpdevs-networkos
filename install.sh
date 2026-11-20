@@ -17,7 +17,7 @@ set -Eeuo pipefail
 
 readonly PRODUCT="XPDevs NetworkOS"
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly VERSION="$(tr -d '\n' < "${SCRIPT_DIR}/VERSION" 2>/dev/null || echo "1.0.0")"
+readonly PRODUCT_VERSION="$(tr -d '\n' < "${SCRIPT_DIR}/VERSION" 2>/dev/null || echo "1.0.0")"
 readonly APP_DIR="/opt/xpdevs-networkos"
 readonly ETC_DIR="/etc/xpdevs-networkos"
 readonly STATE_DIR="/var/lib/xpdevs-networkos"
@@ -72,7 +72,7 @@ trap cleanup EXIT INT TERM
 # --------------------------------------------------------------------- helpers
 usage() {
   cat <<EOF
-${PRODUCT} ${VERSION} installer
+${PRODUCT} ${PRODUCT_VERSION} installer
 
   sudo bash install.sh [options]
 
@@ -98,6 +98,14 @@ EOF
 require_root() {
   [[ "${EUID}" -eq 0 ]] || die "Run this installer as root: sudo bash install.sh"
 }
+
+# Refuse to proceed without root before creating system files or changing services.
+require_root
+
+# The first preflight messages are logged, so create the log directory first.
+mkdir -p "${LOG_DIR}" "${STATE_DIR}" "${ETC_DIR}"
+chmod 750 "${LOG_DIR}" "${STATE_DIR}"
+chmod 755 "${ETC_DIR}"
 
 ask() { # ask <prompt> <default> <variable>
   local prompt="$1" default="$2" __var="$3" answer=""
@@ -180,6 +188,18 @@ interface_ipv4() {
 }
 
 # ------------------------------------------------------------------- preflight
+for required_path in \
+  "${SCRIPT_DIR}/VERSION" \
+  "${SCRIPT_DIR}/requirements.txt" \
+  "${SCRIPT_DIR}/networkos" \
+  "${SCRIPT_DIR}/packaging/networkosctl" \
+  "${SCRIPT_DIR}/packaging/systemd" \
+  "${SCRIPT_DIR}/packaging/sudoers/xpdevs-networkos" \
+  "${SCRIPT_DIR}/packaging/logrotate/xpdevs-networkos" \
+  "${SCRIPT_DIR}/packaging/avahi/xpdevs-networkos.service"; do
+  [[ -e "${required_path}" ]] || die "Required project file is missing: ${required_path}"
+done
+
 step "Checking the hardware and operating system"
 
 MODEL="$(detect_model)"
@@ -290,7 +310,7 @@ done
 mkdir -p "${LOG_DIR}" "${STATE_DIR}" "${ETC_DIR}"
 chmod 750 "${LOG_DIR}" "${STATE_DIR}"
 chmod 755 "${ETC_DIR}"
-log "=== ${PRODUCT} ${VERSION} installer started on ${MODEL} (${OS_NAME}, ${ARCH}) ==="
+log "=== ${PRODUCT} ${PRODUCT_VERSION} installer started on ${MODEL} (${OS_NAME}, ${ARCH}) ==="
 
 WORK_DIR="$(mktemp -d /root/.networkos-install.XXXXXX)"
 chmod 700 "${WORK_DIR}"
@@ -513,7 +533,7 @@ export NETWORKOS_DHCP_END="${DHCP_END}"
 export NETWORKOS_WAN="${WAN_IF}"
 export NETWORKOS_LAN_IF="${WLAN_IF}"
 export NETWORKOS_WIFI_PASS_FILE="${WORK_DIR}/wifi.pass"
-export NETWORKOS_VERSION="${VERSION}"
+export NETWORKOS_VERSION="${PRODUCT_VERSION}"
 export NETWORKOS_ETC_DIR="${ETC_DIR}"
 export NETWORKOS_KEEP_CONFIG="${KEEP_CONFIG}"
 
@@ -686,14 +706,6 @@ fi
 # --------------------------------------------------------------- verification
 step "Running the connectivity and blocking verification"
 if "${CTL}" healthcheck --json > "${WORK_DIR}/health.json" 2>/dev/null; then
-  "${VENV}/bin/python" - <<'PY' || true
-import json
-try:
-    with open("/root/health.json", "r", encoding="utf-8") as handle:
-        pass
-except OSError:
-    pass
-PY
   "${VENV}/bin/python" - "${WORK_DIR}/health.json" <<'PY' || true
 import json, sys
 try:
@@ -733,7 +745,7 @@ fi
 # ------------------------------------------------------------------- summary
 DASH_IP="${LAN_ADDRESS}"
 printf '\n%s────────────────────────────────────────────────────────────%s\n' "${C_BLUE}" "${C_RESET}"
-printf '%s%s %s installed%s\n' "${C_BOLD}" "${C_GREEN}" "${PRODUCT} ${VERSION}" "${C_RESET}"
+printf '%s%s %s installed%s\n' "${C_BOLD}" "${C_GREEN}" "${PRODUCT} ${PRODUCT_VERSION}" "${C_RESET}"
 printf '%s────────────────────────────────────────────────────────────%s\n' "${C_BLUE}" "${C_RESET}"
 say ""
 say "  Dashboard:      http://networkos.local"
