@@ -44,7 +44,7 @@ def render_hostapd(cfg, version: str) -> str:
         "driver=nl80211",
         "ctrl_interface=/run/xpdevs-hostapd",
         "ctrl_interface_group=0",
-        f"ssid={_quote_ssid(wifi.ssid)}",
+        f"ssid2={wifi.ssid.encode('utf-8').hex()}",
         f"hw_mode={wifi.hw_mode}",
         f"channel={wifi.channel}",
         "ieee80211n=1" if wifi.ieee80211n else "ieee80211n=0",
