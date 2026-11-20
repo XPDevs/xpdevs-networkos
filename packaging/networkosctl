@@ -1,0 +1,6 @@
+#!/bin/sh
+# XPDevs NetworkOS privileged control wrapper.
+# Installed root-owned at /usr/local/sbin/networkosctl; the only program the
+# dashboard account may run through sudo.
+set -eu
+exec /opt/xpdevs-networkos/venv/bin/python -m networkos.cli "$@"

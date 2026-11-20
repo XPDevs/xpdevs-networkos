@@ -1,0 +1,5 @@
+# XPDevs NetworkOS runtime dependencies.
+# Everything runs from a local virtualenv; there are no cloud services.
+Flask==3.1.2
+waitress==3.0.2
+argon2-cffi==25.1.0

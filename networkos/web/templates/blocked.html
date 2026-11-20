@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Access restricted · {{ product }}</title>
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+{% include "partials/icons.html" %}
+<div class="error-page">
+  <div class="error-card">
+    <span class="empty__icon" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-lock"/></svg></span>
+    <div class="error-code">Restricted</div>
+    <h1>This dashboard is only reachable from your own network</h1>
+    <p>
+      Requests are accepted from local network addresses only, so the administration interface
+      is never exposed to the public internet. Your request came from
+      <span class="mono">{{ remote }}</span>.
+    </p>
+    <p class="text-sm dim mt-3">
+      Connect to the wireless network or the wired LAN, then open
+      <span class="mono">http://{{ dashboard_hostname }}</span> again.
+    </p>
+    <div class="btn-row">
+      <a class="btn btn--primary" href="/">Try again</a>
+    </div>
+    <p class="text-xs dim mt-4">{{ product }} {{ version }}</p>
+  </div>
+</div>
+</body>
+</html>

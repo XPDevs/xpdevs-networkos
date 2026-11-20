@@ -1,0 +1,11 @@
+/var/log/xpdevs-networkos/*.log {
+    weekly
+    rotate 2
+    maxsize 512k
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su root adm
+}

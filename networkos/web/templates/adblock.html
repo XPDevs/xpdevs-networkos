@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Ad blocking{% endblock %}
+{% block page_title %}Ad blocking{% endblock %}
+{% block page_sub %}Pi-hole DNS filtering for every device on the wireless network{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <span class="hero__icon" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-shield"/></svg></span>
+  <div class="hero__text">
+    <h1 id="blocking-headline">Checking Pi-hole…</h1>
+    <p id="blocking-subline">Reading the Pi-hole API</p>
+  </div>
+  <div class="hero__actions">
+    <button class="btn" type="button" id="verify-blocking">
+      <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+      <span class="btn__label">Verify blocking</span>
+    </button>
+    <button class="btn" type="button" id="toggle-blocking">
+      <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
+      <span class="btn__label">Pause blocking</span>
+    </button>
+  </div>
+</section>
+
+<div id="adblock-banner" hidden></div>
+
+<div class="grid grid--stats">
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">DNS queries</span>
+      <span class="stat__icon stat__icon--blue" aria-hidden="true"><svg class="icon"><use href="#i-activity"/></svg></span>
+    </div>
+    <div class="stat__value" id="stat-total">—</div>
+    <div class="stat__meta" id="stat-total-meta">Since midnight</div>
+    <span class="pill pill--muted" id="api-pill"><span class="dot"></span><span>Pi-hole API</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Blocked</span>
+      <span class="stat__icon stat__icon--amber" aria-hidden="true"><svg class="icon"><use href="#i-filter"/></svg></span>
+    </div>
+    <div class="stat__value" id="stat-blocked">—</div>
+    <div class="stat__meta" id="stat-blocked-meta">Denied by gravity and blocklists</div>
+    <span class="pill pill--warn" id="blocked-share-pill"><span class="dot"></span><span>—</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Blocked share</span>
+      <span class="stat__icon" aria-hidden="true"><svg class="icon"><use href="#i-gauge"/></svg></span>
+    </div>
+    <div class="stat__value"><span id="stat-percent">—</span><span class="stat__unit">%</span></div>
+    <div class="stat__meta" id="stat-percent-meta">Share of all queries</div>
+    <span class="pill pill--muted"><span class="dot"></span><span id="verify-pill-text">Not verified</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Domains on lists</span>
+      <span class="stat__icon stat__icon--violet" aria-hidden="true"><svg class="icon"><use href="#i-database"/></svg></span>
+    </div>
+    <div class="stat__value" id="stat-gravity">—</div>
+    <div class="stat__meta" id="stat-gravity-meta">Gravity database</div>
+    <span class="pill pill--muted"><span class="dot"></span><span id="gravity-updated">—</span></span>
+  </article>
+</div>
+
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div class="card__title">Most blocked domains</div>
+      <div class="card__actions"><span class="text-xs dim">Today</span></div>
+    </div>
+    <div class="card__body" id="top-blocked-list">
+      <div class="text-sm dim">Loading…</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div class="card__title">Most requested domains</div>
+      <div class="card__actions"><a class="btn btn--ghost btn--sm" href="/adblock" data-action-refresh>Refresh</a></div>
+    </div>
+    <div class="card__body" id="top-permitted-list">
+      <div class="text-sm dim">Loading…</div>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">Blocking verification</div>
+      <div class="card__sub">Blocking is only reported as active after a real DNS answer is checked</div>
+    </div>
+    <div class="card__actions">
+      <span class="pill" id="verification-pill"><span class="dot"></span><span>Pending</span></span>
+    </div>
+  </div>
+  <div class="card__body" id="verification-body">
+    <div class="text-sm dim">Verification has not run yet.</div>
+  </div>
+</section>
+
+<div class="grid grid--main">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Domain rules</div>
+        <div class="card__sub">Exact allow and block overrides on top of the blocklists</div>
+      </div>
+      <div class="card__actions">
+        <div class="tabs" role="tablist">
+          <button class="tab is-active" type="button" data-kind="allow" role="tab">Allowlist <span id="allow-count"></span></button>
+          <button class="tab" type="button" data-kind="deny" role="tab">Blocked <span id="deny-count"></span></button>
+        </div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="domain-form" class="form-stack mb-3">
+        <div class="field">
+          <label class="field__label" for="domain-input" id="domain-label">Domain to always allow</label>
+          <div class="btn-row">
+            <input class="input" id="domain-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false">
+            <button class="btn btn--primary" type="submit" id="domain-submit">Add domain</button>
+          </div>
+          <span class="field__hint">One exact domain per line. Wildcards and regex rules stay in the Pi-hole interface.</span>
+        </div>
+      </form>
+      <div class="table-wrap">
+        <table class="table table--stack">
+          <thead><tr><th>Domain</th><th class="table__actions">Action</th></tr></thead>
+          <tbody id="domain-rows">
+            <tr><td colspan="2"><div class="text-sm dim">Loading…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Blocklists</div>
+        <div class="card__sub">Subscription lists compiled into the gravity database</div>
+      </div>
+      <div class="card__actions">
+        <button class="btn btn--sm" type="button" id="gravity-btn">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="#i-restart"/></svg>
+          Update lists
+        </button>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="list-form" class="form-stack mb-3">
+        <div class="field">
+          <label class="field__label" for="list-input">Add a blocklist URL</label>
+          <div class="btn-row">
+            <input class="input mono" id="list-input" type="url" placeholder="https://example.com/hosts.txt" autocomplete="off" spellcheck="false">
+            <button class="btn" type="submit" id="list-submit">Add</button>
+          </div>
+        </div>
+      </form>
+      <div class="table-wrap">
+        <table class="table table--stack">
+          <thead><tr><th>Address</th><th>Domains</th><th class="table__actions">Action</th></tr></thead>
+          <tbody id="list-rows">
+            <tr><td colspan="3"><div class="text-sm dim">Loading…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card__foot" id="lists-foot">Blocklist management uses the Pi-hole API.</div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">Recent DNS activity</div>
+      <div class="card__sub">Newest queries answered by Pi-hole</div>
+    </div>
+    <div class="card__actions">
+      <button class="btn btn--sm" type="button" id="refresh-queries">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="table table--stack">
+        <thead><tr><th>Time</th><th>Domain</th><th>Client</th><th>Type</th><th class="table__actions">Result</th></tr></thead>
+        <tbody id="queries-rows">
+          <tr><td colspan="5"><div class="text-sm dim">Loading…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card__foot" id="queries-foot">Query log retention is limited to keep the SD card healthy.</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/adblock.js" defer></script>
+{% endblock %}

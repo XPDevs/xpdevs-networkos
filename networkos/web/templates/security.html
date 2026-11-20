@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Security{% endblock %}
+{% block page_title %}Security{% endblock %}
+{% block page_sub %}Administrator account, active sessions and the audit trail{% endblock %}
+
+{% block content %}
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Administrator account</div>
+        <div class="card__sub">Single local account, created during installation</div>
+      </div>
+      <div class="card__actions">
+        <span class="pill pill--ok" id="hash-pill"><span class="dot"></span><span>{{ 'Argon2id' if argon2 else 'scrypt' }}</span></span>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="kv" id="account-kv">
+        <div class="kv__row"><span class="kv__k">Loading</span><span class="kv__v">…</span></div>
+      </div>
+    </div>
+    <div class="card__foot">
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-lock"/></svg>
+      Passwords are never stored or logged in plain text.
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Change password</div>
+        <div class="card__sub">All other sessions are signed out after a change</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="password-form" class="form-stack" autocomplete="off">
+        <div class="field">
+          <label class="field__label" for="current_password">Current password</label>
+          <div class="password-field">
+            <input class="input" id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+            <button class="password-toggle" type="button" data-toggle-password data-target="current_password" aria-label="Show password">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+          </div>
+          <span class="field__error" data-error-for="invalid_current_password"></span>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="new_password">New password</label>
+            <div class="password-field">
+              <input class="input" id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="10" required>
+              <button class="password-toggle" type="button" data-toggle-password data-target="new_password" aria-label="Show password">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"/></svg>
+              </button>
+            </div>
+            <span class="field__hint">At least 10 characters, not a common password.</span>
+            <span class="field__error" data-error-for="weak_password"></span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="confirm_password">Confirm new password</label>
+            <input class="input" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required>
+            <span class="field__error" data-error-for="password_mismatch"></span>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="save-password">
+            <svg class="icon" aria-hidden="true"><use href="#i-key"/></svg>
+            <span class="btn__label">Update password</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">Active sessions</div>
+      <div class="card__sub">Every browser currently signed in to this dashboard</div>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="table table--stack">
+        <thead><tr><th>Address</th><th>Client</th><th>Signed in</th><th>Last seen</th><th class="table__actions">Action</th></tr></thead>
+        <tbody id="session-rows">
+          <tr><td colspan="5"><div class="text-sm dim">Loading…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Security policy</div>
+        <div class="card__sub">Applied by the backend on every request</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="kv" id="policy-kv"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Audit trail</div>
+        <div class="card__sub">State-changing actions performed from the dashboard</div>
+      </div>
+    </div>
+    <div class="card__body card__body--flush">
+      <div class="table-wrap">
+        <table class="table table--stack">
+          <thead><tr><th>When</th><th>Account</th><th>Action</th><th>Detail</th></tr></thead>
+          <tbody id="audit-rows">
+            <tr><td colspan="4"><div class="text-sm dim">Loading…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/security.js" defer></script>
+{% endblock %}

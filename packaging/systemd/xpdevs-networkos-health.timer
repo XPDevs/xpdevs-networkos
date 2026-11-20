@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the XPDevs NetworkOS health check every minute
+Documentation=https://xpdevs.github.io/
+
+[Timer]
+OnBootSec=90s
+OnUnitActiveSec=60s
+AccuracySec=10s
+Unit=xpdevs-networkos-health.service
+Persistent=false
+
+[Install]
+WantedBy=timers.target

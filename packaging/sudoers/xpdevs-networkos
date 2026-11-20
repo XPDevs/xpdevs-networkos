@@ -1,0 +1,9 @@
+# XPDevs NetworkOS - privileged helper policy.
+#
+# The dashboard runs as the unprivileged account "xpdevs-networkos" and may
+# execute exactly one program as root: networkosctl. That program validates
+# every argument and only implements the subcommands listed in docs/SECURITY.md.
+# No shell is ever invoked, and no user-supplied string is passed through it.
+Defaults:xpdevs-networkos !requiretty
+Defaults:xpdevs-networkos env_reset,secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+xpdevs-networkos ALL=(root) NOPASSWD: /usr/local/sbin/networkosctl

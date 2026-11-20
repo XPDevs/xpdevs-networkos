@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Connected devices{% endblock %}
+{% block page_title %}Connected devices{% endblock %}
+{% block page_sub %}Everything currently known to the DHCP server, the radio and the firewall{% endblock %}
+
+{% block content %}
+<div class="grid grid--stats">
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Devices seen</span>
+      <span class="stat__icon stat__icon--blue" aria-hidden="true"><svg class="icon"><use href="#i-devices"/></svg></span>
+    </div>
+    <div class="stat__value" id="total-value">—</div>
+    <div class="stat__meta" id="total-meta">Loading inventory…</div>
+    <span class="pill pill--muted"><span class="dot"></span><span id="lease-count">—</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Online now</span>
+      <span class="stat__icon stat__icon--green" aria-hidden="true"><svg class="icon"><use href="#i-zap"/></svg></span>
+    </div>
+    <div class="stat__value" id="online-value">—</div>
+    <div class="stat__meta" id="online-meta">Active leases and neighbours</div>
+    <span class="pill pill--ok"><span class="dot dot--pulse"></span><span>Live</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Wireless</span>
+      <span class="stat__icon" aria-hidden="true"><svg class="icon"><use href="#i-wifi"/></svg></span>
+    </div>
+    <div class="stat__value" id="wireless-value">—</div>
+    <div class="stat__meta" id="wireless-meta">Associated to the access point</div>
+    <span class="pill pill--muted"><span class="dot"></span><span>2.4 GHz</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Blocked</span>
+      <span class="stat__icon stat__icon--amber" aria-hidden="true"><svg class="icon"><use href="#i-shield"/></svg></span>
+    </div>
+    <div class="stat__value" id="blocked-value">—</div>
+    <div class="stat__meta" id="blocked-meta">Denied at the firewall</div>
+    <span class="pill pill--warn" id="blocked-pill" hidden><span class="dot"></span><span>Enforced</span></span>
+  </article>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">Device inventory</div>
+      <div class="card__sub" id="inventory-sub">DHCP leases, wireless stations and ARP neighbours merged by MAC address</div>
+    </div>
+    <div class="card__actions">
+      <div class="field search-field">
+        <input class="input" id="device-search" type="search" placeholder="Search name, IP or MAC" aria-label="Search devices">
+      </div>
+      <button class="btn btn--sm" type="button" id="refresh-devices">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="table table--stack" id="device-table">
+        <thead>
+          <tr>
+            <th>Device</th>
+            <th>Address</th>
+            <th>Connection</th>
+            <th>Signal</th>
+            <th>Session</th>
+            <th>Traffic</th>
+            <th class="table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="device-rows">
+          <tr><td colspan="7"><div class="empty"><div class="skeleton skeleton-w-60"></div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card__foot" id="devices-foot">Reading the device table…</div>
+</section>
+
+<div class="banner banner--info">
+  <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+  <div class="banner__body">
+    Blocking a device adds its MAC address to the nftables deny set, which drops all forwarded
+    and inbound traffic for that device immediately. It is not a substitute for a Wi-Fi password.
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/devices.js" defer></script>
+{% endblock %}

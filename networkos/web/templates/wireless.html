@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Wireless{% endblock %}
+{% block page_title %}Wireless{% endblock %}
+{% block page_sub %}Access point, security and radio configuration{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <span class="hero__icon" aria-hidden="true"><svg class="icon icon-lg"><use href="#i-wifi"/></svg></span>
+  <div class="hero__text">
+    <h1 id="ap-headline">{{ ssid }}</h1>
+    <p id="ap-subline">Wireless access point on {{ lan_interface }} · {{ lan_address }}</p>
+  </div>
+  <div class="hero__actions">
+    <button class="btn" type="button" id="restart-ap">
+      <svg class="icon" aria-hidden="true"><use href="#i-restart"/></svg>
+      <span class="btn__label">Restart access point</span>
+    </button>
+    <button class="btn" type="button" id="toggle-wifi">
+      <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
+      <span class="btn__label" id="toggle-wifi-label">{{ 'Disable Wi-Fi' if wifi_enabled else 'Enable Wi-Fi' }}</span>
+    </button>
+  </div>
+</section>
+
+<div class="grid grid--stats">
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Network name</span>
+      <span class="stat__icon stat__icon--blue" aria-hidden="true"><svg class="icon"><use href="#i-wifi"/></svg></span>
+    </div>
+    <div class="stat__value" id="stat-ssid">{{ ssid }}</div>
+    <div class="stat__meta" id="stat-ssid-meta">{{ 'Hidden network' if hidden else 'Visible to nearby devices' }}</div>
+    <span class="pill" id="ap-state-pill"><span class="dot"></span><span>Checking…</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Channel</span>
+      <span class="stat__icon" aria-hidden="true"><svg class="icon"><use href="#i-signal"/></svg></span>
+    </div>
+    <div class="stat__value"><span id="stat-channel">{{ channel }}</span><span class="stat__unit">2.4 GHz</span></div>
+    <div class="stat__meta" id="stat-channel-meta">20 MHz · WPA2-AES</div>
+    <span class="pill pill--muted" id="capability-pill"><span class="dot"></span><span>Checking radio…</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Wireless clients</span>
+      <span class="stat__icon stat__icon--green" aria-hidden="true"><svg class="icon"><use href="#i-devices"/></svg></span>
+    </div>
+    <div class="stat__value"><span id="stat-clients">0</span><span class="stat__unit">connected</span></div>
+    <div class="stat__meta" id="stat-clients-meta">Station table</div>
+    <span class="pill pill--muted" id="client-pill"><span class="dot"></span><span>—</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Security</span>
+      <span class="stat__icon stat__icon--violet" aria-hidden="true"><svg class="icon"><use href="#i-lock"/></svg></span>
+    </div>
+    <div class="stat__value">WPA2</div>
+    <div class="stat__meta">AES-CCMP · pre-shared key</div>
+    <span class="pill pill--ok" id="security-pill"><span class="dot"></span><span id="security-label">Protected</span></span>
+  </article>
+</div>
+
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Access point settings</div>
+        <div class="card__sub">Changes restart the radio briefly; clients reconnect automatically</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="wifi-form" class="form-stack" autocomplete="off">
+        <div class="field">
+          <label class="field__label" for="ssid">Network name (SSID)</label>
+          <input class="input" id="ssid" name="ssid" type="text" maxlength="32" value="{{ ssid }}" required>
+          <span class="field__hint">Up to 32 characters. Changing the name requires re-entering the password.</span>
+          <span class="field__error" data-error-for="ssid"></span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="password">Wi-Fi password</label>
+          <div class="password-field">
+            <input class="input" id="password" name="password" type="password" minlength="8" maxlength="63"
+                   placeholder="Leave blank to keep the current password" autocomplete="new-password">
+            <button class="password-toggle" type="button" data-toggle-password data-target="password" aria-label="Show password">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+          </div>
+          <span class="field__hint">8–63 characters. Only the derived WPA2 key is stored on the device.</span>
+          <span class="field__error" data-error-for="password"></span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="channel">Channel</label>
+            <select class="select" id="channel" name="channel">
+              {% for option in range(1, 14) %}
+              <option value="{{ option }}" {{ 'selected' if option == channel }}>{{ option }}{% if option == 1 or option == 6 or option == 11 %} · recommended{% endif %}</option>
+              {% endfor %}
+            </select>
+            <span class="field__hint">1, 6 and 11 do not overlap.</span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="country">Country code</label>
+            <input class="input mono" id="country" name="country" type="text" maxlength="2"
+                   value="{{ country }}" placeholder="GB" autocapitalize="characters">
+            <span class="field__hint">Sets the legal transmit limits.</span>
+            <span class="field__error" data-error-for="country"></span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="max_clients">Client limit</label>
+            <input class="input" id="max_clients" name="max_clients" type="number" min="1" max="200" value="{{ max_clients }}">
+          </div>
+          <div class="field">
+            <label class="field__label" for="band">Band</label>
+            <input class="input" id="band" value="2.4 GHz (Pi 3 radio)" disabled>
+            <span class="field__hint">The Raspberry Pi 3 Model B has no 5 GHz radio.</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="switch-row">
+            <div class="switch-row__text">
+              <strong>Hide network name</strong>
+              <span>Stop broadcasting the SSID. Clients must enter it manually.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="hidden" name="hidden" {{ 'checked' if hidden }}>
+              <span class="switch__track"></span>
+              <span class="sr-only">Hide network name</span>
+            </label>
+          </div>
+          <div class="switch-row">
+            <div class="switch-row__text">
+              <strong>Client isolation</strong>
+              <span>Prevent wireless clients from reaching each other directly.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="isolate" name="isolate" {{ 'checked' if isolate }}>
+              <span class="switch__track"></span>
+              <span class="sr-only">Client isolation</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="save-wifi">
+            <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+            <span class="btn__label">Apply wireless settings</span>
+          </button>
+          <span class="text-xs dim">Applied with validation and automatic rollback.</span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Channel scan</div>
+        <div class="card__sub">Find the least crowded channel around you</div>
+      </div>
+      <div class="card__actions">
+        <button class="btn btn--sm" type="button" id="scan-btn">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search"/></svg>
+          Scan
+        </button>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="banner banner--info mb-3">
+        <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+        <div class="banner__body">
+          The Pi 3 has a single radio, so scanning pauses the access point for a few seconds.
+          Connected devices reconnect automatically.
+        </div>
+      </div>
+      <div id="scan-results">
+        <div class="text-sm dim">No scan has been run in this session.</div>
+      </div>
+    </div>
+    <div class="card__foot" id="scan-foot">
+      Scans are performed with <span class="mono">iw</span> using the real radio.
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">Connected wireless clients</div>
+      <div class="card__sub">Signal, session time and per-client traffic from the station table</div>
+    </div>
+    <div class="card__actions">
+      <a class="btn btn--ghost btn--sm" href="/devices">Device management</a>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="table table--stack" id="clients-table">
+        <thead>
+          <tr>
+            <th>Client</th><th>Address</th><th>Signal</th><th>Connected</th><th>Traffic</th><th class="table__actions">Action</th>
+          </tr>
+        </thead>
+        <tbody id="client-rows">
+          <tr><td colspan="6"><div class="empty"><strong>Loading clients…</strong></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card__foot" id="clients-foot">Reading the wireless station table.</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/wireless.js" defer></script>
+{% endblock %}

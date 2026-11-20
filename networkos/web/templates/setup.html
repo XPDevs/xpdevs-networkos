@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Initial setup · {{ product }}</title>
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+{% include "partials/icons.html" %}
+
+<div class="auth">
+  <aside class="auth__aside">
+    <div class="auth__brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 8.5a13 13 0 0 1 17 0"/><path d="M6.5 12a8.5 8.5 0 0 1 11 0"/><path d="M9.5 15.5a4.2 4.2 0 0 1 5 0"/>
+          <circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span>
+        <strong>{{ product }}</strong>
+        <span>XPDevs · Network Operating System</span>
+      </span>
+    </div>
+
+    <div class="auth__pitch">
+      <h2>One account protects the whole network.</h2>
+      <p>The password you choose here is required for every page and every setting in
+         this panel. It is stored on the device as a one-way Argon2id hash, so it can be
+         verified but never read back.</p>
+      <div class="auth__points">
+        <div class="auth__point">
+          <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+          <span>Argon2id hash, 32 MiB memory cost, unique random salt</span>
+        </div>
+        <div class="auth__point">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          <span>Five failed sign-ins lock the panel for a cooling-off period</span>
+        </div>
+        <div class="auth__point">
+          <svg class="icon" aria-hidden="true"><use href="#i-devices"/></svg>
+          <span>Reachable from the local network only — never from the internet</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth__foot">
+      <span>{{ product }} {{ version }}</span>
+      <span>·</span>
+      <a href="https://xpdevs.github.io/" rel="noopener noreferrer" target="_blank" class="inherit-color">xpdevs.github.io</a>
+    </div>
+  </aside>
+
+  <section class="auth__panel">
+    <div class="auth__form">
+      <div class="auth__brand mb-4">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 8.5a13 13 0 0 1 17 0"/><path d="M6.5 12a8.5 8.5 0 0 1 11 0"/><path d="M9.5 15.5a4.2 4.2 0 0 1 5 0"/>
+            <circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <span class="brand-text"><strong>{{ product }}</strong><span>Administration</span></span>
+      </div>
+
+      <h1>Create your administrator account</h1>
+      <p>This is the only account, and it is required to open the panel or change any setting.</p>
+
+      {% if errors %}
+      <div class="auth__error" role="alert">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"/></svg>
+        <span>
+          {% for message in errors %}{{ message }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+        </span>
+      </div>
+      {% endif %}
+
+      <form method="post" action="/setup" class="auth__fields" autocomplete="on">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="field">
+          <label class="field__label" for="username">Username</label>
+          <input class="input" id="username" name="username" type="text" value="{{ username }}"
+                 autocomplete="username" autocapitalize="none" spellcheck="false"
+                 pattern="[A-Za-z0-9._\-]{3,32}" title="3-32 letters, digits, dots, hyphens or underscores"
+                 required autofocus>
+          <span class="field__hint">3–32 letters, digits, dots, hyphens or underscores.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="password">Password</label>
+          <div class="password-field">
+            <input class="input" id="password" name="password" type="password"
+                   autocomplete="new-password" minlength="{{ min_length }}" required>
+            <button class="password-toggle" type="button" data-toggle-password data-target="password" aria-label="Show password">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+          </div>
+          <span class="field__hint">At least {{ min_length }} characters. Mix letters, digits and symbols.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="password_confirm">Confirm password</label>
+          <div class="password-field">
+            <input class="input" id="password_confirm" name="password_confirm" type="password"
+                   autocomplete="new-password" minlength="{{ min_length }}" required>
+            <button class="password-toggle" type="button" data-toggle-password data-target="password_confirm" aria-label="Show password">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn--primary btn--block" type="submit">Create account and continue</button>
+      </form>
+
+      <div class="auth__meta">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-lock"/></svg>
+        <span>Stored as an {{ 'Argon2id' if argon2 else 'scrypt' }} hash · cannot be recovered, only reset</span>
+      </div>
+      <div class="auth__meta">
+        <span>Setup runs once. Later you can change this password under Security.</span>
+      </div>
+      <div class="auth__meta">
+        <span>Device address: http://{{ lan_address }} · http://{{ dashboard_hostname }}</span>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="/static/js/login.js" defer></script>
+</body>
+</html>

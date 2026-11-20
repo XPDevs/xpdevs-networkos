@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Network{% endblock %}
+{% block page_title %}Network{% endblock %}
+{% block page_sub %}Uplink, LAN addressing, DHCP, firewall and connectivity{% endblock %}
+
+{% block content %}
+<div class="grid grid--stats">
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Ethernet uplink</span>
+      <span class="stat__icon stat__icon--blue" aria-hidden="true"><svg class="icon"><use href="#i-globe"/></svg></span>
+    </div>
+    <div class="stat__value" id="wan-state">—</div>
+    <div class="stat__meta" id="wan-address">{{ wan_interface }} · waiting for data</div>
+    <span class="pill pill--muted" id="wan-pill"><span class="dot"></span><span>Checking…</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Access point network</span>
+      <span class="stat__icon stat__icon--green" aria-hidden="true"><svg class="icon"><use href="#i-wifi"/></svg></span>
+    </div>
+    <div class="stat__value" id="lan-state">{{ lan_address }}</div>
+    <div class="stat__meta" id="lan-meta">{{ lan_interface }} · /{{ lan_prefix }} subnet</div>
+    <span class="pill pill--muted" id="lan-pill"><span class="dot"></span><span>Checking…</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Firewall</span>
+      <span class="stat__icon stat__icon--amber" aria-hidden="true"><svg class="icon"><use href="#i-shield"/></svg></span>
+    </div>
+    <div class="stat__value" id="fw-state">—</div>
+    <div class="stat__meta" id="fw-meta">nftables · default drop</div>
+    <span class="pill pill--muted" id="fw-pill"><span class="dot"></span><span>—</span></span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">DNS resolver</span>
+      <span class="stat__icon stat__icon--violet" aria-hidden="true"><svg class="icon"><use href="#i-server"/></svg></span>
+    </div>
+    <div class="stat__value" id="dns-state">—</div>
+    <div class="stat__meta" id="dns-meta">Pi-hole on port 53</div>
+    <span class="pill pill--muted" id="dns-pill"><span class="dot"></span><span>—</span></span>
+  </article>
+</div>
+
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Ethernet uplink</div>
+        <div class="card__sub">The wired connection is never reconfigured by NetworkOS</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="kv" id="wan-kv">
+        <div class="kv__row"><span class="kv__k">Loading</span><span class="kv__v">…</span></div>
+      </div>
+    </div>
+    <div class="card__foot">
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-lock"/></svg>
+      Preserved throughout configuration changes so management access survives.
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Wireless network</div>
+        <div class="card__sub">DHCP and DNS handed to wireless clients</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="kv" id="lan-kv">
+        <div class="kv__row"><span class="kv__k">Loading</span><span class="kv__v">…</span></div>
+      </div>
+    </div>
+    <div class="card__foot" id="lan-foot">Clients receive the gateway as their DNS server, so Pi-hole sees every query.</div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">Connectivity checks</div>
+      <div class="card__sub">Live probes, not cached guesses</div>
+    </div>
+    <div class="card__actions">
+      <button class="btn btn--sm" type="button" id="run-test">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-activity"/></svg>
+        Run test
+      </button>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="list" id="connectivity-list">
+      <div class="list__item"><div class="list__main"><div class="list__title">Run the test to probe the uplink, gateway, internet and DNS</div></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="grid grid--main">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">LAN and DHCP settings</div>
+        <div class="card__sub">Changing the gateway ends the current dashboard session on the old address</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="lan-form" class="form-stack" autocomplete="off">
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="lan_address">Gateway address</label>
+            <input class="input mono" id="lan_address" name="lan_address" value="{{ lan_address }}" required>
+            <span class="field__error" data-error-for="lan_address"></span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="lan_prefix">Subnet prefix</label>
+            <input class="input mono" id="lan_prefix" name="lan_prefix" type="number" min="8" max="30" value="{{ lan_prefix }}" required>
+            <span class="field__hint">/24 gives 254 usable addresses.</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="dhcp_start">DHCP range start</label>
+            <input class="input mono" id="dhcp_start" name="dhcp_start" value="{{ dhcp_start }}" required>
+            <span class="field__error" data-error-for="dhcp_range"></span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="dhcp_end">DHCP range end</label>
+            <input class="input mono" id="dhcp_end" name="dhcp_end" value="{{ dhcp_end }}" required>
+          </div>
+        </div>
+        <div class="field-row field-row--3">
+          <div class="field">
+            <label class="field__label" for="lease_time">Lease time</label>
+            <input class="input mono" id="lease_time" name="lease_time" value="{{ lease_time }}" required>
+            <span class="field__hint">e.g. 12h, 1d</span>
+            <span class="field__error" data-error-for="lease_time"></span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="domain">Local domain</label>
+            <input class="input mono" id="domain" name="domain" value="{{ domain }}" required>
+            <span class="field__error" data-error-for="domain"></span>
+          </div>
+          <div class="field">
+            <label class="field__label" for="dns_servers">DNS handed to clients</label>
+            <input class="input mono" id="dns_servers" name="dns_servers" value="{{ dns_servers }}" placeholder="{{ lan_address }}">
+            <span class="field__hint">Comma separated. Defaults to the gateway (Pi-hole).</span>
+            <span class="field__error" data-error-for="dns_servers"></span>
+          </div>
+        </div>
+        <div class="banner banner--warn">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+          <div class="banner__body">
+            Applying these values reassigns {{ lan_interface }} and restarts DHCP. Existing leases are renewed
+            against the new range, and the dashboard moves to the new address.
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="save-lan">
+            <svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>
+            <span class="btn__label">Apply network settings</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">Firewall and NAT</div>
+        <div class="card__sub">nftables policy enforced on every packet</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="switch-row">
+        <div class="switch-row__text">
+          <strong>Firewall enabled</strong>
+          <span>Default drop; only DHCP, DNS, ICMP and the dashboard are allowed.</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="firewall-toggle" {{ 'checked' if firewall_enabled }}>
+          <span class="switch__track"></span>
+          <span class="sr-only">Firewall enabled</span>
+        </label>
+      </div>
+      <div class="switch-row">
+        <div class="switch-row__text">
+          <strong>NAT for wireless clients</strong>
+          <span>Masquerade {{ lan_address }}/{{ lan_prefix }} through {{ wan_interface }} and force DNS to Pi-hole.</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="nat-toggle" {{ 'checked' if nat_enabled }}>
+          <span class="switch__track"></span>
+          <span class="sr-only">NAT enabled</span>
+        </label>
+      </div>
+      <div class="switch-row">
+        <div class="switch-row__text">
+          <strong>SSH from the uplink</strong>
+          <span>Allow SSH on {{ wan_interface }} in addition to the wireless side.</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="ssh-toggle" {{ 'checked' if wan_ssh }} disabled>
+          <span class="switch__track"></span>
+          <span class="sr-only">SSH from uplink</span>
+        </label>
+      </div>
+      <div class="kv mt-3" id="firewall-kv"></div>
+    </div>
+    <div class="card__foot">SSH exposure is controlled by the installer and documented under System.</div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/network.js" defer></script>
+{% endblock %}

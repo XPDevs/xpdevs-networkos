@@ -1,0 +1,10 @@
+[Unit]
+Description=XPDevs NetworkOS health check and safe self-repair
+Documentation=https://xpdevs.github.io/
+After=xpdevs-networkos-net.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/networkosctl healthcheck --remediate
+Nice=10
+IOSchedulingClass=idle

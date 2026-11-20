@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Sign in · {{ product }}</title>
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+{% include "partials/icons.html" %}
+
+<div class="auth">
+  <aside class="auth__aside">
+    <div class="auth__brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 8.5a13 13 0 0 1 17 0"/><path d="M6.5 12a8.5 8.5 0 0 1 11 0"/><path d="M9.5 15.5a4.2 4.2 0 0 1 5 0"/>
+          <circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span>
+        <strong>{{ product }}</strong>
+        <span>XPDevs · Network Operating System</span>
+      </span>
+    </div>
+
+    <div class="auth__pitch">
+      <h2>Your network, entirely on your own hardware.</h2>
+      <p>A Raspberry Pi running as a wireless router, DHCP server and network-wide
+         tracker blocker — managed from one clean dashboard.</p>
+      <div class="auth__points">
+        <div class="auth__point">
+          <svg class="icon" aria-hidden="true"><use href="#i-wifi"/></svg>
+          <span>2.4 GHz access point with WPA2-AES and NAT to your wired uplink</span>
+        </div>
+        <div class="auth__point">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          <span>Pi-hole blocking enforced for every connected device</span>
+        </div>
+        <div class="auth__point">
+          <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+          <span>Argon2id credentials, CSRF protection and LAN-only administration</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth__foot">
+      <span>{{ product }} {{ version }}</span>
+      <span>·</span>
+      <a href="https://xpdevs.github.io/" rel="noopener noreferrer" target="_blank" class="inherit-color">xpdevs.github.io</a>
+    </div>
+  </aside>
+
+  <section class="auth__panel">
+    <div class="auth__form">
+      <div class="auth__brand mb-4">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 8.5a13 13 0 0 1 17 0"/><path d="M6.5 12a8.5 8.5 0 0 1 11 0"/><path d="M9.5 15.5a4.2 4.2 0 0 1 5 0"/>
+            <circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+        <span class="brand-text"><strong>{{ product }}</strong><span>Administration</span></span>
+      </div>
+
+      <h1>Sign in</h1>
+      <p>Use the administrator account you created during setup.</p>
+
+      {% if error %}
+      <div class="auth__error" role="alert">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"/></svg>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form method="post" action="/login{% if next %}?next={{ next|urlencode }}{% endif %}" class="auth__fields" autocomplete="on">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="field">
+          <label class="field__label" for="username">Username</label>
+          <input class="input" id="username" name="username" type="text" value="{{ username }}"
+                 autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+        </div>
+        <div class="field">
+          <label class="field__label" for="password">Password</label>
+          <div class="password-field">
+            <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+            <button class="password-toggle" type="button" data-toggle-password data-target="password" aria-label="Show password">
+              <svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn btn--primary btn--block" type="submit" class="btn btn--primary btn--block h-40">Sign in</button>
+      </form>
+
+      <div class="auth__meta">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-lock"/></svg>
+        <span>{{ 'Argon2id' if argon2 else 'scrypt' }} password hashing · session protected · LAN access only</span>
+      </div>
+      <div class="auth__meta">
+        <span>Reachable at http://{{ dashboard_hostname }}</span>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="/static/js/login.js" defer></script>
+</body>
+</html>

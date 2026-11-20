@@ -1,0 +1,19 @@
+[Unit]
+Description=XPDevs NetworkOS network configuration
+Documentation=https://xpdevs.github.io/
+After=local-fs.target
+Before=xpdevs-networkos-ap.service xpdevs-networkos-dnsmasq.service
+Wants=network-pre.target
+Conflicts=shutdown.target
+DefaultDependencies=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/networkosctl net-apply --reason boot --no-restart
+TimeoutStartSec=120
+# A failed apply leaves eth0 untouched; the dashboard reports safe mode.
+SuccessExitStatus=0
+
+[Install]
+WantedBy=multi-user.target

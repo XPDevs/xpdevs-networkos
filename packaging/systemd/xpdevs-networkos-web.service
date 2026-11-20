@@ -1,0 +1,32 @@
+[Unit]
+Description=XPDevs NetworkOS administration dashboard
+Documentation=https://xpdevs.github.io/
+After=network.target xpdevs-networkos-net.service pihole-FTL.service
+Wants=network.target
+PartOf=xpdevs-networkos.target
+
+[Service]
+Type=simple
+User=xpdevs-networkos
+Group=xpdevs-networkos
+WorkingDirectory=/opt/xpdevs-networkos
+Environment=PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/xpdevs-networkos/venv/bin/python -m networkos.web
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+# The service needs sudo (a narrow allowlist) to apply network changes.
+NoNewPrivileges=no
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+ReadWritePaths=/var/lib/xpdevs-networkos /var/log/xpdevs-networkos
+RestrictSUIDSGID=no
+MemoryMax=256M
+TasksMax=64
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target

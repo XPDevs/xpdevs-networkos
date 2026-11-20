@@ -1,0 +1,8 @@
+[Unit]
+Description=XPDevs NetworkOS (wireless router and ad blocking)
+Documentation=https://xpdevs.github.io/
+Wants=xpdevs-networkos-net.service xpdevs-networkos-ap.service xpdevs-networkos-dnsmasq.service xpdevs-networkos-web.service
+After=xpdevs-networkos-net.service
+
+[Install]
+WantedBy=multi-user.target
