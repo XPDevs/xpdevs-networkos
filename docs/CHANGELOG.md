@@ -2,6 +2,55 @@
 
 All notable changes to XPDevs NetworkOS. This project follows semantic versioning.
 
+## 1.1.0 — repair release
+
+Fixes for faults reproduced on a Raspberry Pi 3 Model B running Debian 13 (trixie).
+
+### Packaging
+
+* `networkosctl` now changes into `/opt/xpdevs-networkos` before running
+  `venv/bin/python -m networkos.cli`. Without it every privileged action failed with
+  `ModuleNotFoundError: No module named 'networkos'` whenever the caller's working
+  directory was not the application directory, which is the case for systemd (`/`) and
+  for `sudo` (the caller's directory).
+* The access point unit is `Type=simple` with no `PIDFile`. hostapd never forks, so the
+  old `Type=forking` left systemd waiting in `activating`, and `systemctl restart` killed
+  nothing: the previous hostapd kept the old SSID and PSK on air while the new
+  configuration sat on disk.
+* dnsmasq gains `CAP_SETUID`, `CAP_SETGID` and `CAP_CHOWN` so it can drop to the
+  `dnsmasq` user and the `dip` group after binding UDP 67.
+* The dashboard gains `AmbientCapabilities=CAP_NET_BIND_SERVICE`, so the unprivileged
+  service user can listen on port 80 without running as root.
+
+### Firewall
+
+* SSH is now allowed on the wired uplink only. The previous renderer opened port 22 on
+  the wireless AP and emitted no rule for `eth0`, so SSH over Ethernet timed out against
+  the DROP policy while every Wi-Fi client could reach sshd.
+* The boot unit is ordered after `nftables.service`, so a distro ruleset flush can no
+  longer wipe the NetworkOS table during startup.
+* Reapplying remains idempotent: the table is deleted and recreated, never appended to.
+
+### Wi-Fi
+
+* The installer masks `wpa_supplicant@wlan0` and marks `wlan0` unmanaged in
+  NetworkManager, so a second supplicant cannot compete with hostapd for the radio.
+* `netapply` compares the SSID the running hostapd advertises with the configured one and
+  reports a stale process instead of silently succeeding.
+
+### Application
+
+* `shell.run` accepts the product helper path (`/usr/local/sbin/networkosctl`). The
+  allowlist previously rejected it whenever the caller was already root.
+* `systemstate.snapshot` degrades to the cached snapshot when the helper fails, instead
+  of raising `CommandError` and turning the overview page into a 500.
+
+### Settings
+
+* `network.wan_ssh` is replaced by `network.mgmt_ssh` (default `true`). Old configuration
+  files keep working: the obsolete key is ignored on load and management access stays
+  enabled.
+
 ## 1.0.0 — first release
 
 ### Product

@@ -33,7 +33,7 @@ def _network_payload(cfg) -> dict:
             "dns_servers": cfg.dns_servers(),
             "nat_enabled": cfg.network.nat_enabled,
             "firewall_enabled": cfg.network.firewall_enabled,
-            "wan_ssh": cfg.network.wan_ssh,
+            "mgmt_ssh": cfg.network.mgmt_ssh,
             "wan_interface": cfg.network.wan_interface,
             "lan_interface": cfg.network.lan_interface,
         },

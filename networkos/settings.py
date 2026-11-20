@@ -53,7 +53,9 @@ class NetworkSection:
     dns_servers: list[str] = field(default_factory=list)
     nat_enabled: bool = True
     firewall_enabled: bool = True
-    wan_ssh: bool = False
+    #: Allow SSH on the wired uplink (eth0). Management access depends on this.
+    #: SSH is never opened on the wireless AP interface.
+    mgmt_ssh: bool = True
     enable_mdns: bool = True
 
 

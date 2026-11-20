@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from .. import collect, shell, util
+from ..errors import NetworkOSError
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +58,10 @@ def snapshot(cfg, *, max_age: float = DEFAULT_TTL, live: bool = True) -> dict[st
                     collect.write_state_file(parsed)
                     return _merge_meta(parsed, stale=False, age=0.0, error=None)
             _LAST_ERROR = (result.stderr or result.stdout).strip()[:200] or "state refresh failed"
-        except (json.JSONDecodeError, OSError) as exc:
+        # A missing or failing privileged helper must degrade to the cached
+        # snapshot, not raise: this call sits behind every dashboard page, so
+        # an uncaught CommandError turned the overview into a 500.
+        except (json.JSONDecodeError, OSError, NetworkOSError) as exc:
             _LAST_ERROR = str(exc)[:200]
 
     # Fall back to the on-disk snapshot written by the health check.

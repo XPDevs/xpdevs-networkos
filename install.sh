@@ -352,6 +352,20 @@ if [[ "${KEEP_CONFIG}" -eq 1 ]]; then
   SSID="$(sed -n 's/^ssid = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
   CHANNEL="$(sed -n 's/^channel = \([0-9]*\)$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
   LAN_ADDRESS="$(sed -n 's/^lan_address = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
+  # Country, DHCP pool and interface names are part of the user's configuration
+  # too. Leaving them at installer defaults silently reset the radio's regulatory
+  # domain and the DHCP range on every upgrade.
+  COUNTRY="$(sed -n 's/^country = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
+  DHCP_START="$(sed -n 's/^dhcp_start = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
+  DHCP_END="$(sed -n 's/^dhcp_end = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
+  WAN_IF="$(sed -n 's/^wan_interface = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
+  WLAN_IF="$(sed -n 's/^lan_interface = "\(.*\)"$/\1/p' "${ETC_DIR}/config.toml" | head -n1)"
+  # Fall back to what the hardware probe found if the file predates a key.
+  COUNTRY="${COUNTRY:-${DEFAULT_COUNTRY}}"
+  DHCP_START="${DHCP_START:-10.42.0.10}"
+  DHCP_END="${DHCP_END:-10.42.0.200}"
+  WAN_IF="${WAN_IF:-eth0}"
+  WLAN_IF="${WLAN_IF:-wlan0}"
   ok "Keeping the existing wireless configuration (${SSID:-unknown})"
 else
   if [[ -z "${NETWORKOS_SSID:-}" ]]; then
@@ -590,7 +604,24 @@ for unit in hostapd.service dnsmasq.service lighttpd.service; do
   fi
 done
 systemctl mask dnsmasq.service hostapd.service 2>/dev/null || true
-ok "Distribution hostapd/dnsmasq units are masked; NetworkOS owns them now"
+# wpa_supplicant must not run on the AP interface: a second supplicant holding
+# wlan0 competes with hostapd for the radio and produces exactly the 4-way
+# handshake failures ("invalid MIC in msg 2/4") that clients report.
+systemctl stop "wpa_supplicant@${WLAN_IF}.service" 2>/dev/null || true
+systemctl mask "wpa_supplicant@${WLAN_IF}.service" 2>/dev/null || true
+if has_cmd nmcli; then
+  nmcli device set "${WLAN_IF}" managed no 2>/dev/null || true
+fi
+if [[ -f /etc/NetworkManager/conf.d/xpdevs-networkos.conf ]]; then
+  ok "NetworkManager already leaves ${WLAN_IF} alone"
+else
+  mkdir -p /etc/NetworkManager/conf.d 2>/dev/null || true
+  cat > /etc/NetworkManager/conf.d/xpdevs-networkos.conf <<NMCONF 2>/dev/null || true
+[keyfile]
+unmanaged-devices=interface-name:${WLAN_IF}
+NMCONF
+fi
+ok "Distribution hostapd/dnsmasq units are masked and ${WLAN_IF} is reserved for NetworkOS"
 
 # --------------------------------------------------------------------- Pi-hole
 step "Installing Pi-hole (network-wide ad blocking)"

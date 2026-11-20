@@ -97,7 +97,7 @@ def network_page():
             dns_servers=", ".join(config.network.dns_servers),
             nat_enabled=config.network.nat_enabled,
             firewall_enabled=config.network.firewall_enabled,
-            wan_ssh=config.network.wan_ssh,
+            mgmt_ssh=config.network.mgmt_ssh,
         ),
     )
 

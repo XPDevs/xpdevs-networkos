@@ -1,7 +1,7 @@
 [Unit]
 Description=XPDevs NetworkOS network configuration
 Documentation=https://xpdevs.github.io/
-After=local-fs.target
+After=local-fs.target nftables.service
 Before=xpdevs-networkos-ap.service xpdevs-networkos-dnsmasq.service
 Wants=network-pre.target
 Conflicts=shutdown.target

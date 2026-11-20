@@ -91,3 +91,21 @@ def test_formatting_helpers():
     assert util.human_bytes(1536) == "1.5 KB"
     assert util.percent(1, 3) == 33.3
     assert util.percent(1, 0) == 0.0
+
+
+def test_wpa_psk_matches_the_ieee_reference_vector():
+    """SSID 'IEEE', passphrase 'password' -> the published 802.11i test PSK."""
+    from networkos import util
+
+    assert util.wpa_psk("IEEE", "password") == (
+        "f42c6fc52df0ebef9ebb4b90b38a5f902e83fe1b135a70e23aed762e9710a12e"
+    )
+
+
+def test_wpa_psk_is_derived_from_both_ssid_and_passphrase():
+    from networkos import util
+
+    base = util.wpa_psk("XPDevs-NetworkOS-Test", "correct-horse-battery")
+    assert base != util.wpa_psk("XPDevs-NetworkOS-Test ", "correct-horse-battery")
+    assert base != util.wpa_psk("XPDevs-NetworkOS-Test", "correct-horse-battery!")
+    assert len(base) == 64 and int(base, 16) >= 0

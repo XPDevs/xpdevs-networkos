@@ -243,11 +243,25 @@ def verify_ap(cfg, *, timeout: float = 15.0) -> dict[str, Any]:
                 last_detail = "the interface is not in access point mode"
                 continue
             channel = None
+            running_ssid = None
             for line in info.stdout.splitlines():
-                if "channel" in line:
-                    channel = line.strip()
-                    break
-            return {"ok": True, "channel": channel, "detail": "Access point is broadcasting"}
+                stripped = line.strip()
+                if stripped.startswith("channel") and channel is None:
+                    channel = stripped
+                elif stripped.startswith("ssid ") and running_ssid is None:
+                    running_ssid = stripped[5:].strip()
+            # A restart that leaves the previous hostapd alive keeps the old
+            # SSID/PSK on air while the new file sits on disk. Clients then fail
+            # the 4-way handshake with "invalid MIC in msg 2/4". Comparing the
+            # running SSID against the configured one catches that directly.
+            if running_ssid is not None and running_ssid != cfg.wifi.ssid:
+                last_detail = (
+                    f"hostapd is broadcasting '{running_ssid}' but the configuration says "
+                    f"'{cfg.wifi.ssid}'; the running process is stale"
+                )
+                continue
+            return {"ok": True, "channel": channel, "ssid": running_ssid,
+                    "detail": "Access point is broadcasting"}
         return {"ok": True, "channel": None, "detail": "hostapd is running (iw not available)"}
     return {"ok": False, "channel": None, "detail": last_detail}
 

@@ -135,6 +135,40 @@ Then from a phone or laptop:
 4. In the dashboard open **Ad blocking** and press **Verify**; the result comes from
    an actual DNS query, not from Pi-hole's own status flag.
 
+## Upgrading an existing installation
+
+Re-run the installer from the new copy of the project:
+
+```bash
+cd xpdevs-networkos
+sudo bash install.sh
+```
+
+What is preserved: `/etc/xpdevs-networkos/config.toml`, the derived WPA2 key, the
+administrator account and the SQLite database under `/var/lib/xpdevs-networkos`, the
+Pi-hole database, and the log history. What is replaced: the Python package, the systemd
+units, the sudoers policy, the launcher and the generated daemon configuration (rendered
+again from the stored configuration).
+
+The installer stops the distribution `hostapd` and `dnsmasq` units, masks them, masks
+`wpa_supplicant@wlan0` and marks `wlan0` unmanaged in NetworkManager before the
+NetworkOS units start. It never re-addresses `eth0`, so the management connection
+survives.
+
+After an upgrade that changes the firewall (1.1.0 does), reapply it once so the new rules
+are live before the next reboot:
+
+```bash
+sudo networkosctl net-apply --reason upgrade
+```
+
+### Upgrading from 1.0.0
+
+`network.wan_ssh` was replaced by `network.mgmt_ssh`. The old key is ignored on load and
+management SSH stays enabled, so an upgrade cannot lock you out of Ethernet. The
+behaviour reverses: SSH is now on the wired uplink and off the wireless AP, which is the
+opposite of 1.0.0.
+
 ## 5. Rebooting and re-running
 
 Everything is enabled at boot: `xpdevs-networkos-net` reapplies the configuration,

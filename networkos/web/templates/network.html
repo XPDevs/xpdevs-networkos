@@ -206,7 +206,7 @@
           <span>Allow SSH on {{ wan_interface }} in addition to the wireless side.</span>
         </div>
         <label class="switch">
-          <input type="checkbox" id="ssh-toggle" {{ 'checked' if wan_ssh }} disabled>
+          <input type="checkbox" id="ssh-toggle" {{ 'checked' if mgmt_ssh }} disabled>
           <span class="switch__track"></span>
           <span class="sr-only">SSH from uplink</span>
         </label>

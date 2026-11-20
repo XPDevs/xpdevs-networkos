@@ -114,7 +114,17 @@ def run(
         program = resolved
     else:
         allowed = {path for paths_ in BINARIES.values() for path in paths_}
-        if program not in allowed and not program.startswith(str(paths.INSTALL_ROOT)):
+        # The privileged helper is a product-owned path outside the binary
+        # allowlist. Without this exception ctl() refused to run whenever the
+        # caller was already root (for example the boot-time net unit, or any
+        # process started by the installer), which surfaced as a 500 on the
+        # dashboard overview page.
+        product_paths = {str(paths.CTL_PATH), str(paths.INSTALL_ROOT)}
+        if (
+            program not in allowed
+            and not program.startswith(str(paths.INSTALL_ROOT))
+            and program not in product_paths
+        ):
             raise CommandError("Refusing to execute a program outside the allowlist.", command=program)
 
     started = time.monotonic()

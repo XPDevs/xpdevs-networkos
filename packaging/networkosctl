@@ -2,5 +2,25 @@
 # XPDevs NetworkOS privileged control wrapper.
 # Installed root-owned at /usr/local/sbin/networkosctl; the only program the
 # dashboard account may run through sudo.
+#
+# The Python package lives in /opt/xpdevs-networkos, so the wrapper changes
+# into that directory first. Without this, "python -m networkos.cli" cannot
+# resolve the package when the caller's working directory is anywhere else
+# (systemd uses /, sudo keeps the caller's cwd), and every privileged action
+# fails with ModuleNotFoundError.
 set -eu
-exec /opt/xpdevs-networkos/venv/bin/python -m networkos.cli "$@"
+
+APP_DIR="/opt/xpdevs-networkos"
+
+if [ ! -d "${APP_DIR}" ]; then
+    echo "networkosctl: ${APP_DIR} is missing; re-run the installer." >&2
+    exit 78
+fi
+
+if [ ! -x "${APP_DIR}/venv/bin/python" ]; then
+    echo "networkosctl: the virtual environment is missing; re-run the installer." >&2
+    exit 78
+fi
+
+cd "${APP_DIR}"
+exec "${APP_DIR}/venv/bin/python" -m networkos.cli "$@"

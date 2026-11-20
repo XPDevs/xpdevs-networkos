@@ -7,18 +7,32 @@ Wants=network.target
 BindsTo=sys-subsystem-net-devices-wlan0.device
 
 [Service]
-Type=forking
-PIDFile=/run/xpdevs-hostapd.pid
+# hostapd runs in the foreground (-d is not used; it never forks without -B),
+# so systemd must supervise it directly. The previous Type=forking plus
+# PIDFile= combination made systemd wait for a PID file that hostapd writes but
+# never followed with a parent exit, leaving the unit stuck in "activating".
+# Worse, "systemctl restart" then killed nothing, so an old hostapd kept
+# running with the previous SSID/PSK while the new configuration sat on disk.
+# That stale process is what produced "invalid MIC in msg 2/4" and
+# AP-STA-POSSIBLE-PSK-MISMATCH on clients using the new password.
+Type=simple
 ExecStartPre=/usr/sbin/rfkill unblock wlan
-ExecStart=/usr/sbin/hostapd -P /run/xpdevs-hostapd.pid /etc/xpdevs-networkos/generated/hostapd.conf
+ExecStart=/usr/sbin/hostapd /etc/xpdevs-networkos/generated/hostapd.conf
+ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=3
+TimeoutStartSec=30
 TimeoutStopSec=15
+# Kill the whole cgroup so no orphaned hostapd survives a restart.
+KillMode=control-group
 # hostapd needs raw netlink access to the radio.
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_DAC_OVERRIDE
+NoNewPrivileges=yes
 ProtectSystem=full
 ProtectHome=yes
 PrivateTmp=yes
+# hostapd writes its control socket and state under /run.
+ReadWritePaths=/run
 
 [Install]
 WantedBy=multi-user.target

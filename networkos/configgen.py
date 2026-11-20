@@ -110,9 +110,13 @@ def render_nftables(cfg, version: str) -> str:
     network = ipaddress.IPv4Network(f"{net.lan_address}/{prefix}", strict=False)
     lan_cidr = str(network)
     admin_ports = "{ 80, 443 }"
-    ssh_rule = [f"        iifname {{ {lan}, {wan} }} tcp dport 22 accept"] if net.wan_ssh else [
-        f"        iifname {lan} tcp dport 22 accept"
-    ]
+    # SSH is management access, so it belongs on the wired uplink only. The
+    # previous code did the opposite: it opened port 22 on the wireless AP and
+    # left eth0 with no rule at all, which is why SSH over Ethernet timed out
+    # against the DROP policy while any Wi-Fi client could reach sshd.
+    ssh_rules: list[str] = []
+    if getattr(net, "mgmt_ssh", True) and wan != lan:
+        ssh_rules.append(f"        iifname {wan} tcp dport 22 accept")
 
     lines: list[str] = [
         _header(version),
@@ -135,7 +139,7 @@ def render_nftables(cfg, version: str) -> str:
         f"        iifname {lan} tcp dport 53 accept",
         f"        iifname {{ {lan}, {wan} }} tcp dport {admin_ports} accept",
         f"        ip saddr {lan_cidr} tcp dport {admin_ports} accept",
-        *ssh_rule,
+        *ssh_rules,
         "        counter comment \"input denied\"",
         "    }",
         "",

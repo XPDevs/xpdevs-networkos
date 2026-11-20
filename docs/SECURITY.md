@@ -161,8 +161,9 @@ healthy.
 2. Use a 20+ character Wi-Fi passphrase — it is the only thing between the neighbourhood
    and your LAN.
 3. Keep *Allow requests from public addresses* off.
-4. Keep SSH on the LAN only (`wan_ssh = false`, the default) unless you need it on the
-   wireless side.
+4. SSH listens on the wired uplink only (`mgmt_ssh = true`, the default). It is never
+   opened on the wireless AP interface: any associated client would otherwise be able to
+   reach sshd. Set `mgmt_ssh = false` to close it entirely and manage the box locally.
 5. Lower query retention if the card is small; keep the SD card out of reach.
 6. Review **Security** after any suspicious activity: sessions, recent failures, audit
    trail.

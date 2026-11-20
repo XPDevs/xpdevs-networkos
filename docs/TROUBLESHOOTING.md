@@ -98,6 +98,89 @@ sudo hostapd -dd /etc/xpdevs-networkos/generated/hostapd.conf   # foreground, ve
   radio: `sudo systemctl stop wpa_supplicant NetworkManager`.
 * The SSID is hidden (that is a setting, not a fault): **Wireless → Hidden network**.
 
+## The Wi-Fi password is rejected (invalid MIC / possible PSK mismatch)
+
+Symptoms in `journalctl -u xpdevs-networkos-ap -f`:
+
+```
+WPA: invalid MIC in msg 2/4 of 4-Way Handshake
+AP-STA-POSSIBLE-PSK-MISMATCH
+```
+
+The AP and the client derived different keys. Work through these in order.
+
+1. **Is the running hostapd the one on disk?** A restart that left the old process alive
+   keeps the previous SSID/PSK on air. Check what is actually broadcasting:
+
+   ```bash
+   iw dev wlan0 info | grep ssid
+   grep -E '^(ssid|wpa_psk)=' /etc/xpdevs-networkos/generated/hostapd.conf
+   ```
+
+   If they disagree, the process is stale. Confirm only one hostapd is running
+   (`pgrep -a hostapd`) and restart the unit. Version 1.1.0 fixes the unit that caused
+   this; on an older install the process type was wrong.
+
+2. **Is a second supplicant holding the radio?** `wpa_supplicant@wlan0` or NetworkManager
+   must not manage `wlan0`:
+
+   ```bash
+   systemctl status wpa_supplicant@wlan0 2>/dev/null
+   nmcli device status | grep wlan0        # must read "unmanaged"
+   ```
+
+   The 1.1.0 installer masks the supplicant and writes
+   `/etc/NetworkManager/conf.d/xpdevs-networkos.conf`.
+
+3. **Was the key derived from the SSID being advertised?** The PSK is
+   `PBKDF2-HMAC-SHA1(passphrase, ssid, 4096, 32)`, so the network name is part of the key.
+   Changing the SSID without re-entering the password is refused on purpose. Verify the
+   derivation against a known vector:
+
+   ```bash
+   python3 - <<'EOF'
+   import hashlib
+   print(hashlib.pbkdf2_hmac("sha1", b"password", b"IEEE", 4096, 32).hex())
+   # must print f42c6fc52df0ebef9ebb4b90b38a5f902e83fe1b135a70e23aed762e9710a12e
+   EOF
+   ```
+
+4. **Re-enter the password** through **Wireless** or:
+
+   ```bash
+   printf '%s' 'new-passphrase' | sudo networkosctl wifi-apply --ssid 'XPDevs-NetworkOS-Test' --password-stdin
+   ```
+
+   That regenerates the config atomically and restarts the AP.
+
+5. **Forget the network on the client** before retrying. Android and iOS cache the PSK
+   for a known SSID and will keep replaying the old one.
+
+The AP uses WPA2-Personal with AES/CCMP (`wpa=2`, `rsn_pairwise=CCMP`). TKIP is not
+offered, so a client that only supports WPA1 cannot join; that is deliberate.
+
+## SSH over Ethernet stopped working
+
+The input chain drops by default, so SSH needs an explicit rule. Version 1.1.0 allows
+port 22 on the wired uplink only (`mgmt_ssh`, default on) and never on the AP interface.
+
+```bash
+sudo nft list chain inet networkos input | grep 'dport 22'
+sudo networkosctl net-apply --reason manual     # reapply from the stored configuration
+```
+
+If the rule is missing, `mgmt_ssh` is false. Turn it back on in the configuration and
+reapply:
+
+```bash
+sudo sed -i 's/^mgmt_ssh = false/mgmt_ssh = true/' /etc/xpdevs-networkos/config.toml
+sudo networkosctl net-apply --reason manual
+```
+
+The ruleset is regenerated at every boot by `xpdevs-networkos-net.service`, which runs
+after `nftables.service`. A hand-added rule (`nft add rule ...`) is not persisted; put the
+change in the configuration instead.
+
 ## Clients connect but get no address
 
 ```bash

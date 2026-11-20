@@ -7,16 +7,25 @@ Wants=xpdevs-networkos-ap.service
 
 [Service]
 Type=simple
+# --test parses the generated file before the real start, so a bad render is a
+# clean failure instead of a half-configured DHCP server.
 ExecStartPre=/usr/sbin/dnsmasq --test --conf-file=/etc/xpdevs-networkos/generated/dnsmasq.conf
 ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/etc/xpdevs-networkos/generated/dnsmasq.conf
 Restart=on-failure
 RestartSec=2
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_DAC_OVERRIDE
+# dnsmasq starts as root to bind UDP 67, then drops to the "dnsmasq" user and
+# the "dip" group. Dropping privileges needs CAP_SETUID/CAP_SETGID, and handing
+# the lease file to that group needs CAP_CHOWN. Without them systemd aborts the
+# start with "cannot change to group dip" and dnsmasq never serves DHCP.
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW CAP_DAC_OVERRIDE CAP_SETUID CAP_SETGID CAP_CHOWN
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_RAW
+NoNewPrivileges=yes
 ProtectSystem=full
 ProtectHome=yes
 PrivateTmp=yes
 # dnsmasq binds UDP 67 only; DNS stays with Pi-hole.
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+ReadWritePaths=/var/lib/xpdevs-networkos /run
 
 [Install]
 WantedBy=multi-user.target

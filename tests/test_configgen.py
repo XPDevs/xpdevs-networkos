@@ -58,15 +58,35 @@ def test_nftables_ruleset_nats_and_drops_by_default():
     assert "tcp dport { 80, 443 }" in text
 
 
-def test_nftables_only_opens_ssh_on_the_uplink_when_requested():
+def test_nftables_opens_ssh_on_the_wired_uplink_only():
+    """Management SSH belongs on eth0; the wireless AP must never expose it."""
+    text = configgen.render_nftables(_config(), "1.0.0")
+    assert "iifname eth0 tcp dport 22 accept" in text
+    assert "iifname wlan0 tcp dport 22 accept" not in text
+    assert "tcp dport 22" in text.split("policy drop")[1]
+
+
+def test_nftables_can_close_ssh_entirely():
     cfg = _config()
-    cfg.network.wan_ssh = False
+    cfg.network.mgmt_ssh = False
     text = configgen.render_nftables(cfg, "1.0.0")
-    assert "iifname wlan0 tcp dport 22 accept" in text
-    assert "iifname { wlan0, eth0 } tcp dport 22" not in text
-    cfg.network.wan_ssh = True
-    text = configgen.render_nftables(cfg, "1.0.0")
-    assert "iifname { wlan0, eth0 } tcp dport 22 accept" in text
+    assert "tcp dport 22" not in text
+
+
+def test_nftables_still_allows_dhcp_and_dns_to_wireless_clients():
+    text = configgen.render_nftables(_config(), "1.0.0")
+    assert "iifname wlan0 udp dport 67 accept" in text
+    assert "iifname wlan0 udp dport 53 accept" in text
+    assert "iifname wlan0 tcp dport 53 accept" in text
+
+
+def test_nftables_ruleset_is_idempotent_to_apply():
+    """Reapplying must not accumulate rules: the table is replaced wholesale."""
+    cfg = _config()
+    first = configgen.render_nftables(cfg, "1.0.0")
+    second = configgen.render_nftables(cfg, "1.0.0")
+    assert first == second
+    assert first.count("table inet networkos") == 1
 
 
 def test_nftables_keeps_the_uplink_dhcp_client_working():
