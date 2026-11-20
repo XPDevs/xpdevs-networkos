@@ -523,7 +523,7 @@ ok "Installed the privileged helper at ${CTL}"
 # --------------------------------------------------------------- configuration
 step "Writing the product configuration"
 
-export APP_DIR="${APP_DIR}"
+export APP_DIR
 export NETWORKOS_SSID="${SSID}"
 export NETWORKOS_CHANNEL="${CHANNEL}"
 export NETWORKOS_COUNTRY="${COUNTRY}"
