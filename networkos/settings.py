@@ -14,6 +14,7 @@ import os
 import tempfile
 import threading
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from . import paths
@@ -207,7 +208,7 @@ def from_dict(data: dict[str, Any]) -> Config:
 def load(use_cache: bool = True, path=None) -> Config:
     """Load the configuration, falling back to safe defaults when absent."""
     global _CACHE, _CACHE_STAMP
-    target = path or paths.CONFIG_FILE
+    target = Path(path) if path else paths.CONFIG_FILE
     try:
         stat = os.stat(target)
         stamp = (stat.st_mtime_ns, stat.st_size)
@@ -262,7 +263,7 @@ def _quote(value: str) -> str:
 def save(config: Config, path=None) -> None:
     """Atomically persist the configuration with strict permissions."""
     global _CACHE, _CACHE_STAMP
-    target = path or paths.CONFIG_FILE
+    target = Path(path) if path else paths.CONFIG_FILE
     target.parent.mkdir(parents=True, exist_ok=True)
     payload = to_toml(config)
     fd, tmp_name = tempfile.mkstemp(prefix=".config-", dir=str(target.parent))
