@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en" data-theme="{{ theme_default|default('light') }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0a1a2c" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#060b12" media="(prefers-color-scheme: dark)">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}{{ product }}{% endblock %} · {{ product }}</title>
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="stylesheet" href="/static/css/admin.css?v={{ version }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="dash" data-page="{{ page }}" data-csrf="{{ csrf_token }}" data-version="{{ version }}"
+      data-ssid="{{ ssid }}" data-lan="{{ lan_address }}" data-lan-interface="{{ lan_interface }}"
+      data-wan-interface="{{ wan_interface }}" data-theme-default="{{ theme_default }}">
+
+{% include "partials/icons.html" %}
+
+<div class="app" id="app">
+  <button class="scrim" type="button" data-action="close-nav" aria-label="Close navigation" tabindex="-1"></button>
+
+  <aside class="sidebar" aria-label="Primary navigation">
+    <div class="sidebar__brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 8.5a13 13 0 0 1 17 0"/><path d="M6.5 12a8.5 8.5 0 0 1 11 0"/><path d="M9.5 15.5a4.2 4.2 0 0 1 5 0"/>
+          <circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>{{ product }}</strong>
+        <span>XPDevs</span>
+      </span>
+    </div>
+
+    <nav class="nav" aria-label="Sections">
+      <div class="nav__label">Network</div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'overview' }}" href="/" {{ 'aria-current="page"' if page == 'overview' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-dashboard"/></svg>
+          <span>Overview</span>
+        </a>
+      </div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'wireless' }}" href="/wireless" {{ 'aria-current="page"' if page == 'wireless' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-wifi"/></svg>
+          <span>Wireless</span>
+          <span class="nav__badge" id="nav-wifi-badge" hidden></span>
+        </a>
+      </div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'devices' }}" href="/devices" {{ 'aria-current="page"' if page == 'devices' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-devices"/></svg>
+          <span>Connected devices</span>
+          <span class="nav__badge" id="nav-device-badge" hidden></span>
+        </a>
+      </div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'adblock' }}" href="/adblock" {{ 'aria-current="page"' if page == 'adblock' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          <span>Ad blocking</span>
+          <span class="nav__badge" id="nav-block-badge" hidden></span>
+        </a>
+      </div>
+
+      <div class="nav__label">Administration</div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'network' }}" href="/network" {{ 'aria-current="page"' if page == 'network' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-network"/></svg>
+          <span>Network</span>
+        </a>
+      </div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'security' }}" href="/security" {{ 'aria-current="page"' if page == 'security' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+          <span>Security</span>
+        </a>
+      </div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'system' }}" href="/system" {{ 'aria-current="page"' if page == 'system' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-server"/></svg>
+          <span>System</span>
+        </a>
+      </div>
+      <div class="nav__item">
+        <a class="nav__link {{ 'is-active' if page == 'settings' }}" href="/settings" {{ 'aria-current="page"' if page == 'settings' }}>
+          <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
+          <span>Settings</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar__footer">
+      <div class="side-account">
+        <span class="avatar" aria-hidden="true">{{ (username[:1] or 'A')|upper }}</span>
+        <span class="side-account__meta">
+          <strong>{{ username or 'Administrator' }}</strong>
+          <span>Local administrator</span>
+        </span>
+        <form method="post" action="/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn--icon btn--sm btn--ghost" type="submit" title="Sign out" aria-label="Sign out">
+            <svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg>
+          </button>
+        </form>
+      </div>
+      <div class="sidebar__version">
+        <span>Version {{ version }}</span>
+        <a href="{{ vendor_url }}" rel="noopener noreferrer" target="_blank">XPDevs</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="btn btn--icon btn--ghost mobile-toggle" type="button" data-action="open-nav" aria-label="Open navigation">
+        <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+
+      <div class="crumbs">
+        <span class="crumbs__root">NetworkOS</span>
+        <span class="crumbs__sep" aria-hidden="true"></span>
+        <span class="crumbs__here">{% block page_title %}Overview{% endblock %}</span>
+      </div>
+
+      <div class="topbar__actions">
+        <span class="pill pill--muted" id="connection-pill" title="Internet connectivity">
+          <span class="dot"></span><span id="connection-text">Checking…</span>
+        </span>
+        <span class="topbar__divider" aria-hidden="true"></span>
+        <button class="btn btn--icon btn--ghost" type="button" data-action="toggle-theme" title="Toggle appearance" aria-label="Toggle appearance">
+          <svg class="icon" aria-hidden="true"><use href="#i-moon" id="theme-icon"/></svg>
+        </button>
+        <button class="btn btn--icon btn--ghost" type="button" data-action="refresh" title="Refresh data" aria-label="Refresh data">
+          <svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page">
+        <div class="page-head">
+          <div class="page-head__text">
+            <div class="page-head__eyebrow">{% block page_section %}Network{% endblock %}</div>
+            <h1>{% block page_heading %}{{ self.page_title() }}{% endblock %}</h1>
+            <p class="page-head__desc">{% block page_sub %}{% endblock %}</p>
+          </div>
+          <div class="page-head__actions">{% block page_actions %}{% endblock %}</div>
+        </div>
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+</div>
+
+<noscript>
+  <div class="content"><div class="banner banner--warn">
+    <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+    <div class="banner__body">JavaScript is disabled in this browser, so live values cannot update.
+      The controls on this page will not work until JavaScript is enabled.</div>
+  </div></div>
+</noscript>
+
+<div class="toast-stack" id="toasts" role="status" aria-live="polite"></div>
+<div class="modal" id="modal" hidden>
+  <button class="modal__backdrop" type="button" data-action="modal-close" aria-label="Close dialog"></button>
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__head">
+      <h2 id="modal-title">Confirm</h2>
+      <p id="modal-sub"></p>
+    </div>
+    <div class="modal__body" id="modal-body"></div>
+    <div class="modal__foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<script src="/static/js/core.js" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

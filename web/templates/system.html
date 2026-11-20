@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}System{% endblock %}
+{% block page_title %}System{% endblock %}
+{% block page_section %}Administration{% endblock %}
+{% block page_sub %}Hardware, services, maintenance and service logs{% endblock %}
+
+{% block content %}
+<div id="system-banner" hidden></div>
+
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-cpu"/></svg>
+          Hardware
+        </div>
+        <div class="card__sub" id="hardware-sub">Raspberry Pi platform</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="kv" id="hardware-kv">
+        <div class="kv__row"><span class="kv__k">Loading</span><span class="kv__v">…</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-server"/></svg>
+          Software
+        </div>
+        <div class="card__sub" id="software-sub">XPDevs NetworkOS</div>
+      </div>
+      <div class="card__actions">
+        <span class="pill pill--info" id="version-pill">{{ version }}</span>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="kv" id="software-kv">
+        <div class="kv__row"><span class="kv__k">Loading</span><span class="kv__v">…</span></div>
+      </div>
+    </div>
+    <div class="card__foot" id="apply-foot">Configuration changes are validated and rolled back automatically on failure.</div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">
+        <svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>
+        Services
+      </div>
+      <div class="card__sub">systemd units that keep the network running</div>
+    </div>
+    <div class="card__actions">
+      <button class="btn btn--icon btn--sm" type="button" id="refresh-services" aria-label="Refresh services">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="table table--stack">
+        <thead><tr><th>Service</th><th>Unit</th><th>State</th><th>Startup</th><th class="table__actions">Action</th></tr></thead>
+        <tbody id="service-rows">
+          <tr><td colspan="5"><div class="text-sm dim">Loading…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="grid grid--main">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-list"/></svg>
+          Service log
+        </div>
+        <div class="card__sub">Last 80 journal lines for a managed unit</div>
+      </div>
+      <div class="card__actions">
+        <select class="select" id="journal-unit" aria-label="Service">
+          <option value="ap">Access point</option>
+          <option value="dhcp">DHCP (dnsmasq)</option>
+          <option value="pihole">Pi-hole FTL</option>
+          <option value="web" selected>Dashboard</option>
+          <option value="net">Network setup</option>
+        </select>
+        <button class="btn btn--sm" type="button" id="load-journal">Load</button>
+      </div>
+    </div>
+    <div class="card__body">
+      <pre class="journal" id="journal-output">Choose a service and load its recent log lines.</pre>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
+          Maintenance
+        </div>
+        <div class="card__sub">Each action asks for typed confirmation</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="form-stack">
+        <div>
+          <div class="switch-row__text mb-2">
+            <strong>Install operating system updates</strong>
+            <span>Runs apt-get update and upgrade. Takes several minutes on a Pi 3.</span>
+          </div>
+          <button class="btn" type="button" id="update-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+            <span class="btn__label">Update software</span>
+          </button>
+        </div>
+        <div>
+          <div class="switch-row__text mb-2">
+            <strong>Configuration snapshot</strong>
+            <span>Store the current network configuration so it can be restored later.</span>
+          </div>
+          <button class="btn" type="button" id="backup-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-database"/></svg>
+            <span class="btn__label">Create snapshot</span>
+          </button>
+        </div>
+        <div class="banner banner--warn">
+          <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+          <div class="banner__body">
+            <strong>Power actions</strong><br>
+            Rebooting drops every wireless client for about 45 seconds. Shutting down stops the network
+            until the Pi is powered back on.
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" type="button" id="reboot-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-restart"/></svg>
+            <span class="btn__label">Reboot</span>
+          </button>
+          <button class="btn btn--danger" type="button" id="shutdown-btn">
+            <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
+            <span class="btn__label">Shut down</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">
+        <svg class="icon" aria-hidden="true"><use href="#i-database"/></svg>
+        Configuration snapshots
+      </div>
+      <div class="card__sub">Created automatically before every network change</div>
+    </div>
+    <div class="card__actions">
+      <button class="btn btn--sm" type="button" id="refresh-backups">Refresh</button>
+    </div>
+  </div>
+  <div class="card__body card__body--flush">
+    <div class="table-wrap">
+      <table class="table table--stack">
+        <thead><tr><th>Snapshot</th><th>Label</th><th>Created</th><th>Size</th><th class="table__actions">Action</th></tr></thead>
+        <tbody id="backup-rows">
+          <tr><td colspan="5"><div class="text-sm dim">Loading…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card__foot">Restoring a snapshot re-applies the stored network configuration immediately.</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/system.js" defer></script>
+{% endblock %}

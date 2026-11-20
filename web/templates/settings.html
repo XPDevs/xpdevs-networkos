@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_section %}Administration{% endblock %}
+{% block page_sub %}Appearance, naming, retention and exposure{% endblock %}
+
+{% block content %}
+<div class="grid grid--even">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>
+          Appearance
+        </div>
+        <div class="card__sub">Default theme for new browsers; the toggle in the header overrides it per device</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="appearance-form" class="form-stack">
+        <div class="field">
+          <label class="field__label" for="theme_default">Default theme</label>
+          <select class="select" id="theme_default">
+            <option value="light" {{ 'selected' if theme_default == 'light' }}>Light</option>
+            <option value="dark" {{ 'selected' if theme_default == 'dark' }}>Dark</option>
+            <option value="system" {{ 'selected' if theme_default == 'system' }}>Follow the operating system</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="save-appearance">Save appearance</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg>
+          Dashboard address
+        </div>
+        <div class="card__sub">Published over mDNS so no app or DNS record is needed</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="hostname-form" class="form-stack">
+        <div class="field">
+          <label class="field__label" for="dashboard_hostname">Local name</label>
+          <input class="input mono" id="dashboard_hostname" value="{{ dashboard_hostname }}" required>
+          <span class="field__hint">Reachable at http://{{ dashboard_hostname }} from any device on this network.</span>
+          <span class="field__error" data-error-for="invalid_hostname"></span>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="save-hostname">Publish name</button>
+          <button class="btn" type="button" id="republish-mdns">Republish</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-database"/></svg>
+          Query retention
+        </div>
+        <div class="card__sub">Limits Pi-hole database growth on the microSD card</div>
+      </div>
+    </div>
+    <div class="card__body">
+      <form id="retention-form" class="form-stack">
+        <div class="field">
+          <label class="field__label" for="retention_days">Keep DNS queries for</label>
+          <div class="btn-row">
+            <input class="input" id="retention_days" type="number" min="1" max="365" value="{{ retention_days }}">
+            <span class="chip">days</span>
+          </div>
+          <span class="field__hint">Default 7 days. Lower values reduce SD card writes; statistics still work.</span>
+          <span class="field__error" data-error-for="invalid_retention"></span>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="save-retention">Save retention</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <div class="card__title">
+          <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+          Administration exposure
+        </div>
+        <div class="card__sub">The dashboard is restricted to local addresses by default</div>
+      </div>
+      <div class="card__actions">
+        <span class="pill pill--ok" id="exposure-pill"><span class="dot"></span><span>LAN only</span></span>
+      </div>
+    </div>
+    <div class="card__body">
+      <div class="switch-row">
+        <div class="switch-row__text">
+          <strong>Allow requests from public addresses</strong>
+          <span>Only enable this behind your own TLS reverse proxy. The dashboard itself speaks plain HTTP.</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="allow_public_access" {{ 'checked' if allow_public }}>
+          <span class="switch__track"></span>
+          <span class="sr-only">Allow public access</span>
+        </label>
+      </div>
+      <div class="banner banner--warn mt-3">
+        <svg class="icon" aria-hidden="true"><use href="#i-alert"/></svg>
+        <div class="banner__body">
+          With this disabled, requests from public addresses are refused before authentication.
+          The wireless clients themselves are never blocked.
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head">
+    <div>
+      <div class="card__title">
+        <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+        About this installation
+      </div>
+      <div class="card__sub">{{ product }} {{ version }} · built by XPDevs</div>
+    </div>
+    <div class="card__actions">
+      <a class="btn btn--sm" href="https://xpdevs.github.io/" target="_blank" rel="noopener noreferrer">
+        XPDevs <svg class="icon icon-sm" aria-hidden="true"><use href="#i-external"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="card__body">
+    <div class="kv" id="about-kv">
+      <div class="kv__row"><span class="kv__k">Loading</span><span class="kv__v">…</span></div>
+    </div>
+  </div>
+  <div class="card__foot">
+    Documentation for installation, hardware support and troubleshooting ships with the project in <span class="mono">docs/</span>.
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/settings.js" defer></script>
+{% endblock %}

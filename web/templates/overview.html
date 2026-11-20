@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block page_title %}Overview{% endblock %}
+{% block page_section %}Network{% endblock %}
+{% block page_sub %}{{ data.system.model }} · {{ data.system.os }} · {{ data.system.version }}{% endblock %}
+
+{% block content %}
+{% set pihole = data.pihole %}
+{% set resources = data.resources %}
+
+<section class="hero">
+  <span class="hero__icon" aria-hidden="true">
+    <svg class="icon icon-lg"><use href="#i-router"/></svg>
+  </span>
+  <div class="hero__text">
+    <h2>{{ ssid }}</h2>
+    <p id="hero-meta">{{ lan_address }} · {{ data.system.model }} · up {{ resources.uptime.human }}</p>
+  </div>
+  <div class="hero__actions">
+    <button class="btn" type="button" id="diagnostics-btn">
+      <svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>
+      <span class="btn__label">Run diagnostics</span>
+    </button>
+    <a class="btn btn--primary" href="/wireless">
+      <svg class="icon" aria-hidden="true"><use href="#i-wifi"/></svg>
+      <span class="btn__label">Wireless settings</span>
+    </a>
+  </div>
+</section>
+
+<div id="overview-banner" hidden></div>
+
+<div class="grid grid--stats">
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Uplink</span>
+      <span class="stat__icon stat__icon--blue" aria-hidden="true"><svg class="icon"><use href="#i-globe"/></svg></span>
+    </div>
+    <div class="stat__value" id="wan-value">{{ 'Online' if data.wan.online else 'Offline' }}</div>
+    <div class="stat__meta" id="wan-meta">
+      {% if data.wan.ipv4 %}{{ data.wan.ipv4 }}{% else %}No address{% endif %}
+      {% if data.wan.latency_ms is not none %}· {{ data.wan.latency_ms }} ms{% endif %}
+    </div>
+    <span class="pill {{ 'pill--ok' if data.wan.online else 'pill--bad' }}" id="wan-pill">
+      <span class="dot{{ ' dot--pulse' if data.wan.online }}"></span>
+      <span id="wan-pill-text">{{ 'Connected' if data.wan.online else 'No internet' }}</span>
+    </span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Access point</span>
+      <span class="stat__icon stat__icon--green" aria-hidden="true"><svg class="icon"><use href="#i-wifi"/></svg></span>
+    </div>
+    <div class="stat__value"><span id="ap-clients">{{ data.ap.clients_online }}</span><span class="stat__unit">clients</span></div>
+    <div class="stat__meta" id="ap-meta">Channel {{ data.ap.channel }} · {{ data.ap.band }}</div>
+    <span class="pill {{ 'pill--ok' if data.ap.broadcasting else 'pill--warn' }}" id="ap-pill">
+      <span class="dot"></span>
+      <span id="ap-pill-text">{{ 'Broadcasting' if data.ap.broadcasting else 'Not broadcasting' }}</span>
+    </span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Ad blocking</span>
+      <span class="stat__icon stat__icon--violet" aria-hidden="true"><svg class="icon"><use href="#i-shield"/></svg></span>
+    </div>
+    <div class="stat__value"><span id="block-percent">{{ pihole.stats.percent if pihole.available else '—' }}</span><span class="stat__unit">%</span></div>
+    <div class="stat__meta" id="block-meta">
+      {% if pihole.available %}{{ pihole.stats.blocked|number }} of {{ pihole.stats.total|number }} queries{% else %}{{ pihole.reason or 'Unavailable' }}{% endif %}
+    </div>
+    <span class="pill {{ 'pill--ok' if pihole.verified else ('pill--warn' if pihole.enabled else 'pill--muted') }}" id="block-pill">
+      <span class="dot"></span>
+      <span id="block-pill-text">
+        {%- if pihole.verified %}Blocking verified{% elif pihole.enabled %}Enabled, unverified{% else %}Paused{% endif -%}
+      </span>
+    </span>
+  </article>
+
+  <article class="card stat">
+    <div class="stat__top">
+      <span class="stat__label">Connected devices</span>
+      <span class="stat__icon" aria-hidden="true"><svg class="icon"><use href="#i-devices"/></svg></span>
+    </div>
+    <div class="stat__value"><span id="devices-online">{{ data.devices.online }}</span><span class="stat__unit">/ {{ data.devices.total }}</span></div>
+    <div class="stat__meta" id="devices-meta">{{ data.devices.wireless }} wireless · {{ data.devices.blocked }} blocked</div>
+    <span class="pill pill--muted" id="devices-pill">
+      <span class="dot"></span>
+      <span>{{ data.devices.total }} seen on this network</span>
+    </span>
+  </article>
+</div>
+
+<div class="grid grid--main">
+  <div class="grid">
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">
+            <svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>
+            Network throughput
+          </div>
+          <div class="card__sub" id="traffic-sub">Measured from the kernel interface counters</div>
+        </div>
+        <div class="card__actions">
+          <span class="chip" title="Download"><svg class="icon" aria-hidden="true"><use href="#i-arrow-down"/></svg><span id="rx-rate">—</span></span>
+          <span class="chip" title="Upload"><svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg><span id="tx-rate">—</span></span>
+        </div>
+      </div>
+      <div class="card__body">
+        <div class="spark-lg">
+          <canvas id="traffic-chart" aria-label="Recent network throughput"></canvas>
+        </div>
+        <div class="traffic-legend mt-3">
+          <span class="legend-item"><span class="legend-swatch" data-legend="rx"></span> Download</span>
+          <span class="legend-item"><span class="legend-swatch" data-legend="tx"></span> Upload</span>
+          <span class="legend-item" id="traffic-totals">
+            {{ data.wan.interface }}: {{ resources.traffic[wan_interface].rx_bytes|bytes }} received
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">
+            <svg class="icon" aria-hidden="true"><use href="#i-cpu"/></svg>
+            System resources
+          </div>
+          <div class="card__sub">{{ data.system.model }} · {{ data.resources.cpu.cores }} cores</div>
+        </div>
+        <div class="card__actions">
+          <span class="pill pill--muted" id="uptime-pill">Up {{ resources.uptime.human }}</span>
+        </div>
+      </div>
+      <div class="card__body">
+        <div class="form-stack">
+          <div class="bar-row">
+            <div class="bar-row__top">
+              <span class="bar-row__label">CPU load</span>
+              <span class="bar-row__value" id="cpu-value">{{ resources.cpu.percent if resources.cpu.percent is not none else '—' }}%</span>
+            </div>
+            <div class="progress progress--ok" id="cpu-progress"><div class="progress__bar" id="cpu-bar"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-row__top">
+              <span class="bar-row__label">Memory</span>
+              <span class="bar-row__value" id="memory-value">{{ resources.memory.used|bytes }} / {{ resources.memory.total|bytes }}</span>
+            </div>
+            <div class="progress progress--ok" id="memory-progress"><div class="progress__bar" id="memory-bar"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-row__top">
+              <span class="bar-row__label">Storage</span>
+              <span class="bar-row__value" id="storage-value">{{ resources.storage.used|bytes }} / {{ resources.storage.total|bytes }}</span>
+            </div>
+            <div class="progress progress--ok" id="storage-progress"><div class="progress__bar" id="storage-bar"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-row__top">
+              <span class="bar-row__label">CPU temperature</span>
+              <span class="bar-row__value" id="temp-value">{{ resources.temperature.celsius|temp }}</span>
+            </div>
+            <div class="progress progress--ok" id="temp-progress"><div class="progress__bar" id="temp-bar"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">
+            <svg class="icon" aria-hidden="true"><use href="#i-devices"/></svg>
+            Connected devices
+          </div>
+          <div class="card__sub">Live from DHCP leases and the wireless station table</div>
+        </div>
+        <div class="card__actions">
+          <a class="btn btn--ghost btn--sm" href="/devices">All devices</a>
+        </div>
+      </div>
+      <div class="card__body card__body--flush">
+        <div class="table-wrap">
+          <table class="table table--stack">
+            <thead>
+              <tr><th>Device</th><th>Address</th><th>Link</th><th class="table__actions">Status</th></tr>
+            </thead>
+            <tbody id="device-rows">
+              {% for device in data.devices.recent %}
+              <tr>
+                <td>
+                  <div class="td-main">
+                    <span class="device-avatar" aria-hidden="true"><svg class="icon icon-sm"><use href="#i-devices"/></svg></span>
+                    <span class="cell-stack">
+                      <span class="td-main">{{ device.display_name }}</span>
+                      <span class="td-sub mono">{{ device.mac }}</span>
+                    </span>
+                  </div>
+                </td>
+                <td class="mono">{{ device.ip or '—' }}</td>
+                <td class="text-sm">{{ device.connection|capitalize }}</td>
+                <td class="table__actions">
+                  {% if device.blocked %}
+                  <span class="pill pill--bad"><span class="dot"></span>Blocked</span>
+                  {% elif device.online %}
+                  <span class="pill pill--ok"><span class="dot"></span>Online</span>
+                  {% else %}
+                  <span class="pill pill--muted"><span class="dot"></span>Idle</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">
+            <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+            Ad blocking
+          </div>
+          <div class="card__sub">Pi-hole DNS filtering</div>
+        </div>
+        <div class="card__actions">
+          <a class="btn btn--ghost btn--sm" href="/adblock">
+            Manage <svg class="icon icon-sm" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="card__body">
+        <div class="stat-grid-tight">
+          <div class="mini-stat">
+            <div class="mini-stat__label">Queries</div>
+            <div class="mini-stat__value" id="queries-total">{{ pihole.stats.total|number if pihole.available else '—' }}</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat__label">Blocked</div>
+            <div class="mini-stat__value" id="queries-blocked">{{ pihole.stats.blocked|number if pihole.available else '—' }}</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat__label">On lists</div>
+            <div class="mini-stat__value" id="gravity-domains">{{ pihole.stats.gravity_domains|number if pihole.available else '—' }}</div>
+          </div>
+        </div>
+        <div class="mt-4" id="top-blocked-wrap">
+          <div class="eyebrow mb-2">Most blocked domains today</div>
+          <div id="top-blocked">
+            {% if pihole.top_blocked %}
+              {% set top_max = pihole.top_blocked[0].count or 1 %}
+              {% for item in pihole.top_blocked[:4] %}
+              <div class="bar-row">
+                <div class="bar-row__top">
+                  <span class="bar-row__label">{{ item.domain }}</span>
+                  <span class="bar-row__value">{{ item.count|number }}</span>
+                </div>
+                <div class="bar"><div class="bar__fill bar__fill--danger" data-width="{{ (item.count / top_max * 100)|round(1) }}"></div></div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-sm dim">No blocked queries recorded yet.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% if pihole.reason %}
+      <div class="card__foot">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"/></svg>
+        {{ pihole.reason }}
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">
+            <svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>
+            Recent activity
+          </div>
+          <div class="card__sub">System events from this appliance</div>
+        </div>
+      </div>
+      <div class="card__body" id="event-list">
+        {% if data.events %}
+          {% for event in data.events %}
+          <div class="event-row">
+            <span class="event-dot event-dot--{{ event.level }}"></span>
+            <div class="event-body">
+              <div class="event-text">{{ event.message }}</div>
+              <div class="event-time">{{ event.at|replace('T', ' ')|replace('Z', '') }} · {{ event.category }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-sm dim">No events recorded yet.</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">
+            <svg class="icon" aria-hidden="true"><use href="#i-server"/></svg>
+            Service health
+          </div>
+          <div class="card__sub">Managed by systemd, restarted automatically on failure</div>
+        </div>
+        <div class="card__actions">
+          <span class="pill {{ 'pill--ok' if data.health.overall == 'ok' else ('pill--warn' if data.health.overall in ('warn', 'unknown') else 'pill--bad') }}">
+            <span class="dot"></span>{{ data.health.overall|capitalize }}
+          </span>
+        </div>
+      </div>
+      <div class="card__body card__body--flush">
+        <div class="list" id="service-list">
+          {% for key, label in [('ap', 'Access point (hostapd)'), ('dhcp', 'DHCP and DNS relay (dnsmasq)'), ('pihole', 'Pi-hole FTL'), ('web', 'XPDevs dashboard')] %}
+          {% set service = data.services.get(key, {}) %}
+          <div class="list__item">
+            <span class="event-dot {{ 'event-dot--success' if service.running else 'event-dot--error' }}"></span>
+            <div class="list__main">
+              <div class="list__title">{{ label }}</div>
+              <div class="list__meta">{{ service.state or 'unknown' }} · {{ service.enabled_state or 'unknown' }}</div>
+            </div>
+            <span class="list__value {{ 'muted' if not service.running }}">
+              {{ 'Running' if service.running else 'Stopped' }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card__foot">
+        {% set failing = data.health.checks|selectattr('status', 'equalto', 'fail')|list %}
+        {% if failing %}
+          <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert"/></svg>
+          {{ failing[0].label }}: {{ failing[0].detail }}
+        {% else %}
+          <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check-circle"/></svg>
+          All health checks passing
+        {% endif %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/overview.js" defer></script>
+{% endblock %}
